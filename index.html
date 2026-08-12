@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Red Flag</title>
+  <meta name="description" content="Red Flag — your cycle, tracked with personality.">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#7B2D42">
+  <link rel="icon" href="app-icon.png">
+  <link rel="apple-touch-icon" href="app-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Space+Grotesk:wght@400;500;700&family=Space+Mono:wght@400;700&family=Caveat:wght@700&display=swap"
+    rel="stylesheet">
+
+  <!-- Firebase (CDN, no install needed) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+
+  <style>
+    /* ============================================================
+       DESIGN TOKENS
+       ============================================================ */
+    :root {
+      --bg: #FFF9F6;
+      --surface: #FFFFFF;
+      --surface-2: #FFF0ED;
+      --ink: #2A1520;
+      --ink-soft: #8C6B78;
+      --wine: #7B2D42;
+      --wine-dark: #5A1E30;
+      --rose: #E8A0B0;
+      --pink: #E8487A;
+      --pink-dark: #C43465;
+      --pink-soft: #FFD6E4;
+      --gold: #D9A566;
+      --gold-soft: #F5E5CB;
+      --line: #F2DDD8;
+      --shadow: 0 8px 30px rgba(42, 21, 32, 0.08);
+    }
+
+    /* ============================================================
+       RESET & BASE
+       ============================================================ */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      background-image:
+        radial-gradient(circle at 8% 12%, rgba(123, 45, 66, 0.06), transparent 40%),
+        radial-gradient(circle at 92% 85%, rgba(232, 72, 122, 0.05), transparent 45%);
+      color: var(--ink);
+      font-family: 'Space Grotesk', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::selection { background: var(--pink-soft); }
+
+    /* ============================================================
+       TYPOGRAPHY
+       ============================================================ */
+    h1, h2, h3, .display {
+      font-family: 'Unbounded', sans-serif;
+      letter-spacing: -0.01em;
+    }
+    .mono { font-family: 'Space Mono', monospace; }
+    .handwriting { font-family: 'Caveat', cursive; }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .app {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 28px 20px 100px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      object-fit: cover;
+    }
+
+    .brand-name {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--wine);
+    }
+
+    .brand-tag {
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-family: 'Caveat', cursive;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    /* ============================================================
+       TABS
+       ============================================================ */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      padding: 5px;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 26px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      white-space: nowrap;
+      font-family: 'Space Grotesk', sans-serif;
+      transition: background .2s ease, color .2s ease, box-shadow .2s ease, transform .1s ease;
+    }
+
+    .tab.active {
+      background: var(--wine);
+      color: #fff;
+      box-shadow: 0 3px 0 var(--wine-dark);
+    }
+
+    .tab:active {
+      transform: translateY(2px);
+    }
+
+    /* ============================================================
+       VIEWS
+       ============================================================ */
+    .view { display: none; animation: fade .35s ease; }
+    .view.active { display: block; }
+
+    @keyframes fade {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: none; }
+    }
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .card {
+      background: var(--surface);
+      border-radius: 24px;
+      box-shadow: var(--shadow), 0 2px 0 rgba(42, 21, 32, 0.04);
+      padding: 26px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .card-head h2 {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .card-sub {
+      color: var(--ink-soft);
+      font-size: 13px;
+      margin-top: -10px;
+      margin-bottom: 16px;
+    }
+
+    /* ============================================================
+       HERO / CYCLE RING
+       ============================================================ */
+    .hero {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+    }
+
+    @media (max-width: 620px) {
+      .hero { flex-direction: column; }
+    }
+
+    .ring-wrap {
+      position: relative;
+      width: 260px;
+      height: 260px;
+      flex-shrink: 0;
+    }
+
+    .ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .ring-day {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--wine);
+    }
+
+    .ring-phase {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--pink);
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .ring-sub {
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin-top: 4px;
+    }
+
+    /* Pulse animation for today marker */
+    @keyframes marker-pulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    .hero-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .info-row:last-child { border-bottom: none; }
+
+    .info-label {
+      font-size: 13px;
+      color: var(--ink-soft);
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .irregularity-note {
+      font-size: 12px;
+      color: var(--pink);
+      font-style: italic;
+      margin-top: 4px;
+      padding: 8px 12px;
+      background: var(--pink-soft);
+      border-radius: 10px;
+    }
+
+    .trend-up::before  { content: '↗ '; }
+    .trend-down::before { content: '↘ '; }
+    .trend-flat::before { content: '→ '; }
+
+    /* ============================================================
+       BUTTONS — 3D / TACTILE
+       ============================================================ */
+    .btn {
+      border: none;
+      cursor: pointer;
+      border-radius: 14px;
+      padding: 12px 22px;
+      font-weight: 600;
+      font-size: 14px;
+      font-family: 'Space Grotesk', sans-serif;
+      transition: transform .1s ease, box-shadow .1s ease;
+      position: relative;
+    }
+
+    .btn:active {
+      transform: translateY(3px) !important;
+    }
+
+    .btn-primary {
+      background: var(--wine);
+      color: #fff;
+      box-shadow: 0 4px 0 var(--wine-dark);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 4px 0 var(--wine-dark), 0 6px 18px rgba(123, 45, 66, 0.2);
+    }
+    .btn-primary:active {
+      box-shadow: 0 1px 0 var(--wine-dark) !important;
+    }
+
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--ink);
+      box-shadow: 0 3px 0 #E8D0CC;
+    }
+    .btn-ghost:active {
+      box-shadow: 0 1px 0 #E8D0CC !important;
+    }
+
+    .btn-danger {
+      background: #fff;
+      color: #B23A3A;
+      border: 1px solid #EFC6C6;
+      box-shadow: 0 3px 0 #EFC6C6;
+    }
+    .btn-danger:active {
+      box-shadow: 0 1px 0 #EFC6C6 !important;
+    }
+
+    .btn-block { width: 100%; }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 12px;
+      border-radius: 10px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn[disabled] {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    /* ============================================================
+       FLOATING ACTION BUTTON
+       ============================================================ */
+    .fab {
+      position: fixed;
+      bottom: 26px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      border-radius: 20px;
+      background: var(--pink);
+      color: #fff;
+      font-size: 30px;
+      line-height: 1;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 5px 0 var(--pink-dark), 0 8px 24px rgba(232, 72, 122, 0.3);
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .1s ease, box-shadow .1s ease;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .fab:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 var(--pink-dark);
+    }
+    .fab:hover {
+      box-shadow: 0 5px 0 var(--pink-dark), 0 12px 30px rgba(232, 72, 122, 0.4);
+    }
+
+    /* ============================================================
+       CALENDAR
+       ============================================================ */
+    .cal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .cal-nav {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .cal-nav button {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: none;
+      background: var(--surface-2);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 0 #E8D0CC;
+      transition: transform .1s ease, box-shadow .1s ease;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+    .cal-nav button:active {
+      transform: translateY(2px);
+      box-shadow: 0 0px 0 #E8D0CC;
+    }
+
+    .cal-title {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      min-width: 150px;
+      text-align: center;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .cal-dow {
+      text-align: center;
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-weight: 600;
+      padding-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .cal-cell {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--surface-2);
+      transition: transform .12s ease;
+      box-shadow: 0 2px 0 rgba(42, 21, 32, 0.05);
+    }
+
+    .cal-cell:hover { transform: scale(1.06); }
+
+    .cal-cell.empty {
+      background: transparent;
+      cursor: default;
+      box-shadow: none;
+    }
+    .cal-cell.empty:hover { transform: none; }
+
+    .cal-cell.today {
+      box-shadow: inset 0 0 0 2.5px var(--wine), 0 2px 0 rgba(42, 21, 32, 0.05);
+      font-weight: 700;
+    }
+
+    .cal-cell.period {
+      background: var(--wine);
+      color: #fff;
+      box-shadow: 0 2px 0 var(--wine-dark);
+    }
+
+    .cal-cell.predicted {
+      background: transparent;
+      box-shadow: inset 0 0 0 1.5px var(--wine);
+      color: var(--wine);
+    }
+
+    .cal-cell.fertile {
+      background: var(--gold-soft);
+      color: #7A5A16;
+    }
+
+    .cal-cell.ovulation {
+      background: var(--gold);
+      color: #fff;
+      box-shadow: 0 2px 0 #B8883A;
+    }
+
+    .cal-dot {
+      position: absolute;
+      bottom: 4px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--pink);
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+      font-size: 11px;
+      color: var(--ink-soft);
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend i {
+      width: 10px;
+      height: 10px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    /* ============================================================
+       HISTORY LOG ENTRIES
+       ============================================================ */
+    .log-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .log-entry:last-child { border-bottom: none; }
+
+    .log-date {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .log-meta {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-top: 2px;
+    }
+
+    .log-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 55%;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 8px;
+      background: var(--surface-2);
+      color: var(--ink-soft);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 10px;
+      color: var(--ink-soft);
+    }
+
+    .empty-state .display {
+      font-size: 18px;
+      color: var(--ink);
+      margin-bottom: 6px;
+    }
+
+    /* ============================================================
+       FORMS
+       ============================================================ */
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    input[type=date],
+    input[type=number],
+    input[type=text],
+    input[type=email],
+    input[type=password],
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--line);
+      background: var(--surface-2);
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 14px;
+      margin-bottom: 16px;
+      transition: border-color .2s ease;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--wine);
+    }
+
+    input[type=checkbox] {
+      accent-color: var(--wine);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    textarea.mono-input {
+      font-family: 'Space Mono', monospace;
+      min-height: 160px;
+    }
+
+    /* ============================================================
+       CHIPS & FLOW SELECTORS — 3D / TACTILE
+       ============================================================ */
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .chip {
+      padding: 9px 15px;
+      border-radius: 12px;
+      border: 1.5px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--ink-soft);
+      transition: all .12s ease;
+      user-select: none;
+      box-shadow: 0 3px 0 #E8D0CC;
+    }
+
+    .chip:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #E8D0CC;
+    }
+
+    .chip.selected {
+      background: var(--wine);
+      color: #fff;
+      border-color: var(--wine);
+      box-shadow: 0 3px 0 var(--wine-dark), inset 0 1px 4px rgba(255,255,255,0.15);
+    }
+    .chip.selected:active {
+      box-shadow: 0 1px 0 var(--wine-dark), inset 0 1px 4px rgba(255,255,255,0.15);
+    }
+
+    .chip.mood.selected {
+      background: var(--pink);
+      border-color: var(--pink);
+      box-shadow: 0 3px 0 var(--pink-dark), inset 0 1px 4px rgba(255,255,255,0.15);
+    }
+    .chip.mood.selected:active {
+      box-shadow: 0 1px 0 var(--pink-dark), inset 0 1px 4px rgba(255,255,255,0.15);
+    }
+
+    .flow-group {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .flow-opt {
+      flex: 1;
+      text-align: center;
+      padding: 12px 8px;
+      border-radius: 12px;
+      border: 1.5px solid var(--line);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--ink-soft);
+      box-shadow: 0 3px 0 #E8D0CC;
+      transition: all .12s ease;
+    }
+
+    .flow-opt:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #E8D0CC;
+    }
+
+    .flow-opt.selected {
+      background: var(--wine);
+      color: #fff;
+      border-color: var(--wine);
+      box-shadow: 0 3px 0 var(--wine-dark), inset 0 2px 8px rgba(255,255,255,0.12);
+    }
+    .flow-opt.selected:active {
+      box-shadow: 0 1px 0 var(--wine-dark), inset 0 2px 8px rgba(255,255,255,0.12);
+    }
+
+    /* ============================================================
+       MODALS
+       ============================================================ */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(42, 21, 32, 0.4);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: var(--bg);
+      width: 100%;
+      max-width: 560px;
+      border-radius: 26px 26px 0 0;
+      padding: 26px 24px 30px;
+      max-height: 88vh;
+      overflow-y: auto;
+      animation: slideup .3s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    @media (min-width: 640px) {
+      .overlay { align-items: center; }
+      .modal { border-radius: 26px; }
+    }
+
+    @keyframes slideup {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: none; opacity: 1; }
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .modal-close {
+      border: none;
+      background: var(--surface-2);
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 15px;
+      color: var(--ink-soft);
+      box-shadow: 0 2px 0 #E8D0CC;
+      transition: transform .1s ease, box-shadow .1s ease;
+    }
+    .modal-close:active {
+      transform: translateY(2px);
+      box-shadow: 0 0px 0 #E8D0CC;
+    }
+
+    /* ============================================================
+       INSIGHTS — STAT GRID & CHARTS
+       ============================================================ */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 560px) {
+      .stat-grid { grid-template-columns: repeat(1, 1fr); }
+    }
+
+    .stat-box {
+      background: var(--surface-2);
+      border-radius: 16px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 2px 0 rgba(42, 21, 32, 0.04);
+    }
+
+    .stat-num {
+      font-family: 'Unbounded', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--wine);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--ink-soft);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-top: 4px;
+    }
+
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      height: 120px;
+      margin-top: 10px;
+      overflow-x: auto;
+    }
+
+    .bar-col {
+      flex: 1;
+      min-width: 22px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      height: 100%;
+    }
+
+    .bar {
+      width: 100%;
+      max-width: 28px;
+      border-radius: 8px 8px 4px 4px;
+      background: var(--wine);
+      transition: height .4s ease;
+    }
+
+    .bar-label {
+      font-size: 9px;
+      color: var(--ink-soft);
+      margin-top: 6px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .hbar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .hbar-label {
+      width: 110px;
+      font-size: 12px;
+      color: var(--ink-soft);
+      flex-shrink: 0;
+    }
+
+    .hbar-track {
+      flex: 1;
+      background: var(--surface-2);
+      border-radius: 100px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .hbar-fill {
+      height: 100%;
+      background: var(--wine);
+      border-radius: 100px;
+      transition: width .4s ease;
+    }
+
+    .hbar-val {
+      width: 26px;
+      text-align: right;
+      font-size: 11px;
+      color: var(--ink-soft);
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ============================================================
+       SETTINGS
+       ============================================================ */
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+      gap: 14px;
+    }
+    .settings-row:last-child { border-bottom: none; }
+
+    .settings-row input {
+      width: 90px;
+      margin: 0;
+      text-align: center;
+    }
+
+    .settings-label {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .settings-desc {
+      font-size: 12px;
+      color: var(--ink-soft);
+      margin-top: 3px;
+    }
+
+    .signout-link {
+      color: var(--ink-soft);
+      font-size: 13px;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      background: none;
+      border: none;
+      font-family: inherit;
+      padding: 0;
+      transition: color .15s;
+    }
+    .signout-link:hover { color: var(--wine); }
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ink);
+      color: var(--bg);
+      padding: 12px 22px;
+      border-radius: 14px;
+      font-size: 13px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s ease, transform .25s ease;
+      box-shadow: 0 4px 0 rgba(42, 21, 32, 0.3);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-6px);
+    }
+
+    /* ============================================================
+       FOOTER
+       ============================================================ */
+    footer {
+      text-align: center;
+      color: var(--ink-soft);
+      font-size: 16px;
+      margin-top: 30px;
+      font-family: 'Caveat', cursive;
+      font-weight: 700;
+    }
+
+    /* ============================================================
+       AUTH SCREEN
+       ============================================================ */
+    #auth-screen {
+      min-height: 100vh;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-card {
+      background: var(--surface);
+      border-radius: 26px;
+      box-shadow: var(--shadow), 0 3px 0 rgba(42, 21, 32, 0.05);
+      padding: 36px 30px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .auth-mark {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      margin: 0 auto 16px;
+      object-fit: cover;
+    }
+
+    .auth-toggle {
+      font-size: 13px;
+      color: var(--ink-soft);
+      margin-top: 10px;
+    }
+
+    .auth-toggle a {
+      color: var(--pink);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .auth-error {
+      color: #B23A3A;
+      font-size: 13px;
+      margin-bottom: 12px;
+      min-height: 16px;
+    }
+
+    #app-root { display: none; }
+
+    .sync-badge {
+      font-size: 11px;
+      color: var(--ink-soft);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .sync-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #7CB88F;
+    }
+    .sync-dot.off { background: var(--gold); }
+
+    /* ============================================================
+       PRIVACY HINT (caption text under date inputs in modals)
+       ============================================================ */
+    .privacy-hint {
+      font-size: 11px;
+      color: var(--ink-soft);
+      margin: 6px 0 0;
+      line-height: 1.4;
+      font-style: italic;
+    }
+
+    /* ============================================================
+       LOADING SCREEN (shown while Firebase Auth resolves)
+       ============================================================ */
+    #loading-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--line);
+      border-top-color: var(--wine);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-size: 13px;
+      color: var(--ink-soft);
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* Washi-tape accent card */
+    .washi-tape-card { position: relative; overflow: visible; }
+    .washi-tape-card::before,
+    .washi-tape-card::after {
+      content: '';
+      position: absolute;
+      width: 48px;
+      height: 16px;
+      background: var(--pink);
+      opacity: 0.35;
+      border-radius: 3px;
+      z-index: 1;
+    }
+    .washi-tape-card::before {
+      top: -7px;
+      left: 18px;
+      transform: rotate(-14deg);
+    }
+    .washi-tape-card::after {
+      bottom: -7px;
+      right: 18px;
+      transform: rotate(11deg);
+    }
+
+    /* Hand-drawn stamp badge */
+    .stamp-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border: 3px dashed var(--wine);
+      border-radius: 50%;
+      font-family: 'Caveat', cursive;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--wine);
+      transform: rotate(4deg);
+      box-shadow: 2px 3px 0 rgba(42, 21, 32, 0.08);
+      text-align: center;
+      line-height: 1.15;
+      flex-shrink: 0;
+    }
+
+    /* ============================================================
+       RESPONSIVE HELPERS
+       ============================================================ */
+    @media (max-width: 480px) {
+      .ring-wrap { width: 220px; height: 220px; }
+      .ring-day { font-size: 28px; }
+      .ring-phase { font-size: 10px; }
+      .stat-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- LOADING SCREEN (shown while Firebase Auth state resolves) -->
+  <div id="loading-screen">
+    <img src="app-icon.png" style="width:48px;height:48px;border-radius:14px;" alt="Red Flag">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">checking session…</div>
+  </div>
+
+  <!-- AUTH SCREEN (hidden by default; shown only if no user session found) -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <img src="app-icon.png" class="auth-mark" alt="Red Flag">
+      <h2 style="margin:0 0 4px; color:var(--wine);">Red Flag</h2>
+      <p style="color:var(--ink-soft); font-size:13px; margin-top:0; margin-bottom:20px;">One account. Any phone. Your
+        history, kept.</p>
+      <div class="auth-error" id="auth-error"></div>
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="you@email.com">
+      <label>Password</label>
+      <input type="password" id="auth-password" placeholder="At least 6 characters">
+      <button class="btn btn-primary btn-block" id="auth-submit-btn" onclick="authSubmit()">Log in</button>
+      <div class="auth-toggle" id="auth-toggle-text">New here? <a onclick="toggleAuthMode()">Create an account</a></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP (hidden until logged in) -->
+  <div id="app-root">
+    <div class="app">
+
+      <!-- TOPBAR — simplified: brand + sync badge only -->
+      <div class="topbar">
+        <div class="brand">
+          <img src="app-icon.png" class="brand-mark" alt="Red Flag">
+          <div>
+            <div class="brand-name">Red Flag</div>
+            <div class="brand-tag">your cycle, your rules</div>
+          </div>
+        </div>
+        <div class="sync-badge"><span class="sync-dot" id="sync-dot"></span><span id="sync-label">synced</span></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" data-view="home">Overview</button>
+        <button class="tab" data-view="calendar">Calendar</button>
+        <button class="tab" data-view="history">History</button>
+        <button class="tab" data-view="insights">Insights</button>
+        <button class="tab" data-view="settings">Settings</button>
+      </div>
+
+      <!-- OVERVIEW -->
+      <div class="view active" id="view-home">
+        <div class="card">
+          <div class="hero">
+            <div class="ring-wrap">
+              <svg id="ring-svg" viewBox="0 0 300 300" width="100%" height="100%">
+                <circle cx="150" cy="150" r="95" fill="none" stroke="#FFF0ED" stroke-width="14" />
+                <g id="ring-ticks"></g>
+                <g id="ring-arcs"></g>
+                <g id="ring-labels"></g>
+                <g id="ring-marker"></g>
+              </svg>
+              <div class="ring-center">
+                <div class="ring-day" id="ring-day">–</div>
+                <div class="ring-phase" id="ring-phase">no data yet</div>
+                <div class="ring-sub" id="ring-sub"></div>
+              </div>
+            </div>
+            <div class="hero-info">
+              <div class="info-row"><span class="info-label">Next period expected</span><span class="info-value"
+                  id="next-period">—</span></div>
+              <div class="info-row"><span class="info-label">Predicted ovulation</span><span class="info-value"
+                  id="next-ovulation">—</span></div>
+              <div class="info-row"><span class="info-label">Average cycle length</span><span class="info-value"
+                  id="avg-cycle">—</span></div>
+              <div class="info-row"><span class="info-label">Cycle trend</span><span class="info-value"
+                  id="cycle-trend">—</span></div>
+              <div id="irregularity-note" class="irregularity-note" style="display:none;"></div>
+              <div class="btn-row" style="margin-top:6px;">
+                <button class="btn btn-ghost" onclick="togglePeriodToday()" id="period-toggle-btn">Mark period started
+                  today</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+
+        <div class="card washi-tape-card" id="notif-card" style="display:none;">
+          <div class="card-head">
+            <h2>Get notified</h2>
+          </div>
+          <div class="card-sub">Enable push alerts so Red Flag can remind you before your period is due — even if the app
+            isn't open.</div>
+          <button class="btn btn-primary" id="enable-notif-btn" onclick="enableNotifications()">Enable
+            notifications</button>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h2>Recently logged</h2>
+          </div>
+          <div id="recent-list"></div>
+        </div>
+      </div>
+
+      <!-- CALENDAR -->
+      <div class="view" id="view-calendar">
+        <div class="card">
+          <div class="cal-head">
+            <div class="cal-nav"><button onclick="shiftMonth(-1)">‹</button></div>
+            <div class="cal-title" id="cal-title">Month</div>
+            <div class="cal-nav"><button onclick="shiftMonth(1)">›</button></div>
+          </div>
+          <div class="cal-grid" id="cal-dow-row"></div>
+          <div class="cal-grid" id="cal-grid" style="margin-top:6px;"></div>
+          <div class="legend">
+            <span><i style="background:var(--wine)"></i> Period</span>
+            <span><i style="background:transparent; box-shadow: inset 0 0 0 1.5px var(--wine);"></i> Predicted
+              period</span>
+            <span><i style="background:var(--gold-soft)"></i> Fertile window</span>
+            <span><i style="background:var(--gold)"></i> Ovulation</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- HISTORY -->
+      <div class="view" id="view-history">
+        <div class="card">
+          <div class="card-head">
+            <h2>Cycle history</h2>
+            <button class="btn btn-ghost btn-sm" onclick="openBulkImport()">Bulk import past data</button>
+          </div>
+          <div id="history-list"></div>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="view" id="view-insights">
+        <div class="card">
+          <div class="card-head">
+            <h2>Cycle behavior</h2>
+          </div>
+          <div class="stat-grid">
+            <div class="stat-box">
+              <div class="stat-num" id="stat-cycles">0</div>
+              <div class="stat-label">Cycles logged</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="stat-avgcycle">–</div>
+              <div class="stat-label">Weighted avg (days)</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-num" id="stat-regularity">–</div>
+              <div class="stat-label">Regularity</div>
+            </div>
+          </div>
+          <div class="card-sub" style="margin-top:14px;" id="behavior-note"></div>
+          <div class="card-sub" id="outlier-note" style="display:none; color:var(--gold); margin-top:6px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>Cycle length trend</h2>
+          </div>
+          <div class="card-sub">Length in days of each cycle, oldest to most recent</div>
+          <div class="bar-chart" id="cycle-bar-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>Most common symptoms</h2>
+          </div>
+          <div id="symptom-chart"></div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>Mood distribution</h2>
+          </div>
+          <div id="mood-chart"></div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div class="view" id="view-settings">
+        <div class="card">
+          <div class="card-head">
+            <h2>Cycle defaults</h2>
+          </div>
+          <div class="card-sub">Used to fine-tune predictions, and as a fallback before you have much history.</div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Default cycle length</div>
+              <div class="settings-desc">Days between period start dates</div>
+            </div><input type="number" id="setting-cycle-length" min="15" max="60" value="28" onchange="saveSettings()">
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Luteal phase length</div>
+              <div class="settings-desc">Days from ovulation to next period</div>
+            </div><input type="number" id="setting-luteal-length" min="8" max="20" value="14" onchange="saveSettings()">
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Typical period length</div>
+              <div class="settings-desc">Used until you've logged a few</div>
+            </div><input type="number" id="setting-period-length" min="1" max="12" value="5" onchange="saveSettings()">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>Notifications</h2>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Remind me before period</div>
+              <div class="settings-desc">How many days in advance</div>
+            </div><input type="number" id="setting-notify-days" min="0" max="10" value="2" onchange="saveSettings()">
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Also notify on ovulation day</div>
+              <div class="settings-desc">Extra heads-up on your predicted fertile peak</div>
+            </div>
+            <input type="checkbox" id="setting-notify-ovulation" onchange="saveSettings()"
+              style="width:20px; height:20px; margin:0;">
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <h2>Your data</h2>
+            <div class="stamp-badge">cloud<br>synced</div>
+          </div>
+          <div class="card-sub">Stored in your Red Flag cloud account (Firestore) — synced automatically to any device
+            you log into.</div>
+          <div class="btn-row">
+            <button class="btn btn-ghost" onclick="exportData()">Export backup (.json)</button>
+            <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()">Import
+              backup</button>
+            <input type="file" id="import-file" accept="application/json" onchange="importData(event)"
+              style="display:none;">
+            <button class="btn btn-danger" onclick="clearAllData()">Erase all data</button>
+          </div>
+        </div>
+        <!-- Account section — sign out lives here, not in the top bar -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Account</h2>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label" id="account-email">—</div>
+              <div class="settings-desc">Signed in</div>
+            </div>
+            <button class="signout-link" onclick="signOutUser()">Sign out</button>
+          </div>
+        </div>
+      </div>
+
+      <footer>she's moody, she's messy, she's on schedule 🚩</footer>
+    </div>
+  </div>
+
+  <!-- LOG MODAL -->
+  <div class="overlay" id="log-overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Log an entry</h2><button class="modal-close" onclick="closeLogModal()">✕</button>
+      </div>
+      <label>Date</label>
+      <input type="date" id="log-date">
+      <p class="privacy-hint">The only red flag here is the period blood 🚩 — your data stays private, synced only to your account.</p>
+      <label>Period flow</label>
+      <div class="flow-group" id="flow-group">
+        <div class="flow-opt" data-flow="none">None</div>
+        <div class="flow-opt" data-flow="spotting">Spotting</div>
+        <div class="flow-opt" data-flow="light">Light</div>
+        <div class="flow-opt" data-flow="medium">Medium</div>
+        <div class="flow-opt" data-flow="heavy">Heavy</div>
+      </div>
+      <label>Symptoms</label>
+      <div class="chip-group" id="symptom-group">
+        <div class="chip" data-symptom="Cramps">Cramps</div>
+        <div class="chip" data-symptom="Headache">Headache</div>
+        <div class="chip" data-symptom="Bloating">Bloating</div>
+        <div class="chip" data-symptom="Fatigue">Fatigue</div>
+        <div class="chip" data-symptom="Tender breasts">Tender breasts</div>
+        <div class="chip" data-symptom="Backache">Backache</div>
+        <div class="chip" data-symptom="Acne">Acne</div>
+        <div class="chip" data-symptom="Nausea">Nausea</div>
+        <div class="chip" data-symptom="Cravings">Cravings</div>
+        <div class="chip" data-symptom="Insomnia">Insomnia</div>
+      </div>
+      <label>Mood</label>
+      <div class="chip-group" id="mood-group">
+        <div class="chip mood" data-mood="Happy">🙂 Happy</div>
+        <div class="chip mood" data-mood="Calm">😌 Calm</div>
+        <div class="chip mood" data-mood="Energetic">⚡ Energetic</div>
+        <div class="chip mood" data-mood="Irritable">😤 Irritable</div>
+        <div class="chip mood" data-mood="Anxious">😟 Anxious</div>
+        <div class="chip mood" data-mood="Low">🌧 Low</div>
+      </div>
+      <label>Notes</label>
+      <textarea id="log-notes" placeholder="Anything you want to remember about today..."></textarea>
+      <div class="btn-row"><button class="btn btn-primary btn-block" onclick="saveLogEntry()">Save entry</button></div>
+      <div class="btn-row" style="margin-top:10px;" id="delete-entry-row"></div>
+    </div>
+  </div>
+
+  <!-- BULK IMPORT MODAL -->
+  <div class="overlay" id="bulk-overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Bulk import past cycles</h2><button class="modal-close" onclick="closeBulkImport()">✕</button>
+      </div>
+      <div class="card-sub" style="margin-bottom:14px;">
+        One entry per line: a date, or date + length (e.g. <span class="mono">2024-03-11, 5</span>).
+      </div>
+      <p class="privacy-hint">The only red flag here is the period blood 🚩 — your data stays private, synced only to your account.</p>
+      <textarea class="mono-input" id="bulk-input" placeholder="2024-01-04, 5
+2024-02-01, 4
+2024-03-02
+2024-03-29, 6
+..."></textarea>
+      <div class="auth-error" id="bulk-error"></div>
+      <div class="btn-row"><button class="btn btn-primary btn-block" onclick="processBulkImport()">Import all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB (Floating Action Button for logging) -->
+  <button class="fab" onclick="openLogModal()" id="fab-log" style="display:none;" title="Log today">+</button>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    /* ============================================================
+       FIREBASE CONFIG — replace with YOUR project's config
+       (Firebase Console → Project settings → Your apps → SDK config)
+       ============================================================ */
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYpPG4MPHt7ITu18gn_JVmHJ8_j5CZqU8",
+      authDomain: "red-flag-period-tracker.firebaseapp.com",
+      projectId: "red-flag-period-tracker",
+      storageBucket: "red-flag-period-tracker.firebasestorage.app",
+      messagingSenderId: "948230831573",
+      appId: "1:948230831573:web:67ead8c82db64d16fdd15c"
+    };
+    // Get this from Firebase Console → Project settings → Cloud Messaging → Web Push certificates
+    const VAPID_KEY = "BB7-Ppt80TzGB4pYV7oKkIWjCABlL5068RtXveGQtAtOoUnoL4dJfC1fTaJxvdtmT5X8EMw2GgH_R1xYpzcJqoQ";
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    let messaging = null;
+    try { messaging = firebase.messaging(); } catch (e) { console.warn('Messaging not supported here', e); }
+
+    // Make session persistence explicit — LOCAL is already the default,
+    // but being explicit protects against future SDK changes.
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+    let CURRENT_UID = null;
+    let unsubEntries = null, unsubSettings = null;
+
+    /* ============================================================
+       DATA LAYER — cached locally, synced to Firestore in real time
+       ============================================================ */
+    let DATA = {
+      settings: { cycleLength: 28, lutealLength: 14, periodLength: 5, notifyDaysBefore: 2, notifyOvulation: false },
+      entries: {}
+    };
+
+    function userDoc() { return db.collection('users').doc(CURRENT_UID); }
+    function entriesCol() { return userDoc().collection('entries'); }
+
+    function attachListeners() {
+      unsubSettings = userDoc().onSnapshot(snap => {
+        if (snap.exists) {
+          DATA.settings = Object.assign({ cycleLength: 28, lutealLength: 14, periodLength: 5, notifyDaysBefore: 2, notifyOvulation: false }, snap.data().settings || {});
+        } else {
+          userDoc().set({ settings: DATA.settings }, { merge: true });
+        }
+        setSyncStatus(true);
+        renderAll();
+      }, err => { console.error(err); setSyncStatus(false); });
+
+      unsubEntries = entriesCol().onSnapshot(snap => {
+        const entries = {};
+        snap.forEach(doc => entries[doc.id] = doc.data());
+        DATA.entries = entries;
+        setSyncStatus(true);
+        renderAll();
+        updatePredictionsInCloud();
+      }, err => { console.error(err); setSyncStatus(false); });
+    }
+    function detachListeners() {
+      if (unsubEntries) unsubEntries();
+      if (unsubSettings) unsubSettings();
+    }
+    function setSyncStatus(ok) {
+      document.getElementById('sync-dot').classList.toggle('off', !ok);
+      document.getElementById('sync-label').textContent = ok ? 'synced' : 'offline';
+    }
+
+    async function writeEntry(dateStr, entry) {
+      await entriesCol().doc(dateStr).set(entry);
+    }
+    async function deleteEntry(dateStr) {
+      await entriesCol().doc(dateStr).delete();
+    }
+    async function writeSettings() {
+      await userDoc().set({ settings: DATA.settings }, { merge: true });
+    }
+    // Store computed predictions in the cloud so the GitHub Actions notifier
+    // can check them daily without redoing all the cycle math itself.
+    async function updatePredictionsInCloud() {
+      const info = getCycleInfo();
+      if (!info.hasData) return;
+      await userDoc().set({
+        predictions: {
+          nextPeriod: fmt(info.nextPeriod),
+          ovulation: fmt(info.ovulation),
+          avgCycle: info.avgCycle,
+          updatedAt: new Date().toISOString()
+        }
+      }, { merge: true });
+    }
+
+    /* ============================================================
+       AUTH
+       ============================================================ */
+    let authMode = 'login';
+    function toggleAuthMode() {
+      authMode = authMode === 'login' ? 'signup' : 'login';
+      document.getElementById('auth-submit-btn').textContent = authMode === 'login' ? 'Log in' : 'Create account';
+      document.getElementById('auth-toggle-text').innerHTML = authMode === 'login'
+        ? `New here? <a onclick="toggleAuthMode()">Create an account</a>`
+        : `Already have an account? <a onclick="toggleAuthMode()">Log in</a>`;
+      document.getElementById('auth-error').textContent = '';
+    }
+    async function authSubmit() {
+      const email = document.getElementById('auth-email').value.trim();
+      const pass = document.getElementById('auth-password').value;
+      const errEl = document.getElementById('auth-error');
+      errEl.textContent = '';
+      if (!email || !pass) { errEl.textContent = 'Enter both email and password.'; return; }
+      try {
+        if (authMode === 'login') {
+          await auth.signInWithEmailAndPassword(email, pass);
+        } else {
+          await auth.createUserWithEmailAndPassword(email, pass);
+        }
+      } catch (e) {
+        errEl.textContent = e.message;
+      }
+    }
+    function signOutUser() {
+      detachListeners();
+      auth.signOut();
+    }
+    // NOTE: If users still get logged out despite LOCAL persistence, it's
+    // almost certainly the phone browser's own "clear site data on close"
+    // setting, or iOS Safari's 7-day storage eviction for infrequently-opened
+    // PWAs — not something fixable from app code.
+    auth.onAuthStateChanged(user => {
+      // Hide the loading screen now that auth state is known
+      document.getElementById('loading-screen').style.display = 'none';
+
+      if (user) {
+        CURRENT_UID = user.uid;
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app-root').style.display = 'block';
+        document.getElementById('fab-log').style.display = 'flex';
+        document.getElementById('account-email').textContent = user.email || '—';
+        attachListeners();
+        maybeShowNotifCard();
+      } else {
+        CURRENT_UID = null;
+        detachListeners();
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.getElementById('app-root').style.display = 'none';
+        document.getElementById('fab-log').style.display = 'none';
+      }
+    });
+
+    /* ============================================================
+       NOTIFICATIONS
+       ============================================================ */
+    function maybeShowNotifCard() {
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        document.getElementById('notif-card').style.display = 'block';
+      }
+    }
+    async function enableNotifications() {
+      if (!messaging) { showToast('Push not supported in this browser'); return; }
+      try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') { showToast('Notifications not enabled'); return; }
+        const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+        const token = await messaging.getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: swReg });
+        if (token) {
+          await userDoc().collection('fcmTokens').doc(token).set({ createdAt: new Date().toISOString() });
+          document.getElementById('notif-card').style.display = 'none';
+          showToast('Notifications enabled 🎉');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Could not enable notifications');
+      }
+    }
+
+    /* ============================================================
+       DATE HELPERS
+       ============================================================ */
+    function fmt(d) { const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${day}`; }
+    function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+    function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate() + n); return r; }
+    function daysBetween(a, b) { return Math.round((b - a) / 86400000); }
+    function today() { const t = new Date(); t.setHours(0, 0, 0, 0); return t; }
+    function niceDate(d) { return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); }
+
+    function flexParseDate(str) {
+      str = str.trim();
+      let m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) { d.setHours(0, 0, 0, 0); return d; }
+      return null;
+    }
+
+    // Quotes (phaseQuotes, eventQuotes) have been moved to server-side only
+    // (check-and-notify.js) — they now appear exclusively in push notifications.
+
+    /* ============================================================
+       CYCLE PREDICTION LOGIC — STRATEGY OVERVIEW
+       ============================================================
+       1. Collect all cycle lengths from logged period start dates.
+       2. Filter out outliers (<15 days or >60 days) — likely data-entry
+          errors or unusual one-offs.
+       3. Compute a recency-weighted average of the last 12 filtered cycles
+          (more recent cycles are weighted higher, linearly).
+       4. If the last 2–3 cycles consistently trend in one direction (all
+          shorter or all longer than the overall weighted average), blend
+          60% short-term average + 40% long-term average to make the
+          prediction more responsive to genuine shifts.
+       5. If cycle variability (standard deviation of last 6–8 cycles)
+          exceeds ~5 days, show a predicted date RANGE instead of a single
+          date, sized to the recent standard deviation.
+       6. Predict next period = last period start + smart avg cycle length.
+       7. Predict ovulation = next period − luteal phase length (user setting).
+       8. Fertile window = ovulation − 5 days to ovulation + 1 day (6 days).
+       9. Phase determination:
+          - Menstrual: day 1 through avgPeriod (inclusive both ends)
+          - Follicular: after menstrual ends, before fertile window starts
+          - Fertile window / Ovulation: the fertile span
+          - Luteal: after fertile window, before next period
+       For users with very few cycles (<2), use settings.cycleLength as
+       the default and show an "estimated" label.
+       ============================================================ */
+
+    function getPeriodStartDates() {
+      const dates = Object.keys(DATA.entries).filter(d => DATA.entries[d].flow && DATA.entries[d].flow !== 'none').sort();
+      const starts = []; let prev = null;
+      for (const ds of dates) {
+        const d = parseDate(ds);
+        if (prev === null || daysBetween(prev, d) > 1) starts.push(ds);
+        prev = d;
+      }
+      return starts;
+    }
+
+    function getCycleLengths() {
+      const starts = getPeriodStartDates();
+      const lengths = [];
+      for (let i = 1; i < starts.length; i++) lengths.push(daysBetween(parseDate(starts[i - 1]), parseDate(starts[i])));
+      return lengths;
+    }
+
+    /** Filter out outlier cycle lengths (<15 or >60 days) for averaging. */
+    function getFilteredCycleLengths() {
+      return getCycleLengths().filter(len => len >= 15 && len <= 60);
+    }
+
+    /** Count how many outlier cycles were excluded. */
+    function getOutlierCount() {
+      const all = getCycleLengths();
+      return all.length - all.filter(len => len >= 15 && len <= 60).length;
+    }
+
+    function getPeriodLengths() {
+      const dates = Object.keys(DATA.entries).filter(d => DATA.entries[d].flow && DATA.entries[d].flow !== 'none').sort();
+      const runs = []; let runStart = null, prev = null;
+      for (const ds of dates) {
+        const d = parseDate(ds);
+        if (prev === null || daysBetween(prev, d) > 1) { if (runStart) runs.push(daysBetween(runStart, prev) + 1); runStart = d; }
+        prev = d;
+      }
+      if (runStart) runs.push(daysBetween(runStart, prev) + 1);
+      return runs;
+    }
+
+    function avg(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null; }
+
+    // Weighted average: recent cycles count more (linear recency weight)
+    function weightedAvg(lengths) {
+      if (lengths.length === 0) return null;
+      let totalW = 0, sum = 0;
+      lengths.forEach((len, i) => {
+        const w = i + 1;
+        sum += len * w; totalW += w;
+      });
+      return sum / totalW;
+    }
+
+    /**
+     * Smart average that adjusts for recent trends.
+     * If the last 2–3 cycles consistently trend away from the long-term
+     * weighted average (all shorter OR all longer), we blend 60% short-term
+     * + 40% long-term to make the prediction more responsive to genuine
+     * cycle-length shifts (e.g. starting/stopping medication, lifestyle
+     * changes, perimenopause).
+     */
+    function getSmartAvgCycleLength() {
+      const filtered = getFilteredCycleLengths().slice(-12);
+      if (filtered.length === 0) return DATA.settings.cycleLength;
+
+      const overallAvg = weightedAvg(filtered);
+
+      // Recency check: do the last 2–3 cycles consistently trend one way?
+      if (filtered.length >= 3) {
+        const last3 = filtered.slice(-3);
+        const last3Avg = avg(last3);
+        const allShorter = last3.every(l => l < overallAvg);
+        const allLonger = last3.every(l => l > overallAvg);
+
+        if (allShorter || allLonger) {
+          // Blend: 60% short-term trend, 40% longer-term weighted average
+          return Math.round(last3Avg * 0.6 + overallAvg * 0.4);
+        }
+      }
+
+      return Math.round(overallAvg);
+    }
+
+    function getAvgCycleLength() {
+      return getSmartAvgCycleLength();
+    }
+
+    function getAvgPeriodLength() {
+      const lengths = getPeriodLengths().slice(-6);
+      const a = avg(lengths);
+      return a ? Math.round(a) : DATA.settings.periodLength;
+    }
+
+    function getLastPeriodStart() {
+      const starts = getPeriodStartDates();
+      return starts.length ? parseDate(starts[starts.length - 1]) : null;
+    }
+
+    function getCycleTrend() {
+      const lengths = getFilteredCycleLengths();
+      if (lengths.length < 4) return { label: 'not enough data', cls: '' };
+      const half = Math.floor(lengths.length / 2);
+      const olderAvg = avg(lengths.slice(0, half));
+      const recentAvg = avg(lengths.slice(half));
+      const diff = recentAvg - olderAvg;
+      if (Math.abs(diff) < 1.5) return { label: 'stable', cls: 'trend-flat' };
+      if (diff > 0) return { label: `lengthening (+${diff.toFixed(1)}d)`, cls: 'trend-up' };
+      return { label: `shortening (${diff.toFixed(1)}d)`, cls: 'trend-down' };
+    }
+
+    function getRegularity() {
+      const lengths = getFilteredCycleLengths().slice(-8);
+      if (lengths.length < 2) return { label: '–', sd: null };
+      const m = avg(lengths);
+      const sd = Math.sqrt(avg(lengths.map(l => Math.pow(l - m, 2))));
+      let label;
+      if (sd <= 2) label = 'Very regular';
+      else if (sd <= 5) label = 'Somewhat regular';
+      else label = 'Irregular';
+      return { label, sd };
+    }
+
+    function getCycleInfo() {
+      const last = getLastPeriodStart();
+      const avgCycle = getAvgCycleLength();
+      const avgPeriod = getAvgPeriodLength();
+      const luteal = DATA.settings.lutealLength;
+      const reg = getRegularity();
+      const isIrregular = reg.sd !== null && reg.sd > 5;
+
+      if (!last) return { hasData: false, avgCycle, avgPeriod, luteal, isIrregular };
+
+      const t = today();
+      let dayInCycle = daysBetween(last, t) + 1;
+      const nextPeriod = addDays(last, avgCycle);
+      const ovulation = addDays(nextPeriod, -luteal);
+      const fertileStart = addDays(ovulation, -5);
+      const fertileEnd = addDays(ovulation, 1);
+
+      // Irregularity range: when sd > 5, show a range instead of one date
+      let nextPeriodEarly = nextPeriod, nextPeriodLate = nextPeriod;
+      if (isIrregular) {
+        const spread = Math.ceil(reg.sd);
+        nextPeriodEarly = addDays(last, avgCycle - spread);
+        nextPeriodLate = addDays(last, avgCycle + spread);
+      }
+
+      // Phase determination — sanity-checked:
+      // Menstrual: day 1 through avgPeriod (inclusive, so t <= last + avgPeriod - 1)
+      // Follicular: after menstrual, before fertile window
+      // Fertile window: ovulation - 5 to ovulation + 1 (6-day window)
+      // Ovulation: the specific ovulation day within the fertile window
+      // Luteal: after fertile window, before next period
+      let phase;
+      const periodEnd = addDays(last, avgPeriod - 1);
+      if (t <= periodEnd) phase = 'Menstrual';
+      else if (t >= fertileStart && t <= fertileEnd) phase = (fmt(t) === fmt(ovulation)) ? 'Ovulation' : 'Fertile window';
+      else if (t < fertileStart) phase = 'Follicular';
+      else phase = 'Luteal';
+
+      return {
+        hasData: true, last, avgCycle, avgPeriod, luteal,
+        dayInCycle, nextPeriod, ovulation, fertileStart, fertileEnd, phase,
+        isIrregular, nextPeriodEarly, nextPeriodLate, sd: reg.sd
+      };
+    }
+
+    /* ============================================================
+       RENDER: RING — with labels, tick marks, and pulsing marker
+       ============================================================ */
+    function polar(cx, cy, r, angleDeg) {
+      const a = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) };
+    }
+    function arcPath(cx, cy, r, startDeg, endDeg) {
+      const s = polar(cx, cy, r, startDeg), e = polar(cx, cy, r, endDeg);
+      const large = (endDeg - startDeg) > 180 ? 1 : 0;
+      return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+    }
+
+    function renderRing(info) {
+      const svgArcs = document.getElementById('ring-arcs');
+      const svgMarker = document.getElementById('ring-marker');
+      const svgTicks = document.getElementById('ring-ticks');
+      const svgLabels = document.getElementById('ring-labels');
+      svgArcs.innerHTML = ''; svgMarker.innerHTML = ''; svgTicks.innerHTML = ''; svgLabels.innerHTML = '';
+
+      const cx = 150, cy = 150, r = 95;
+
+      if (!info.hasData) {
+        document.getElementById('ring-day').textContent = '–';
+        document.getElementById('ring-phase').textContent = 'no data yet';
+        document.getElementById('ring-sub').textContent = 'log or import your first cycle';
+        return;
+      }
+
+      const cycleLen = info.avgCycle, periodLen = info.avgPeriod;
+      const ovulationDay = cycleLen - info.luteal;
+      const fertileStartDay = ovulationDay - 5;
+      const fertileEndDay = ovulationDay + 1;
+
+      function dayToDeg(day) { return (day / cycleLen) * 360; }
+
+      // Tick marks — faint markers at each day, longer every 5th day
+      for (let day = 0; day < cycleLen; day++) {
+        const angle = dayToDeg(day);
+        const outerR = (day % 5 === 0) ? r + 12 : r + 9;
+        const innerR = r + 6;
+        const outer = polar(cx, cy, outerR, angle);
+        const inner = polar(cx, cy, innerR, angle);
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        tick.setAttribute('x1', inner.x); tick.setAttribute('y1', inner.y);
+        tick.setAttribute('x2', outer.x); tick.setAttribute('y2', outer.y);
+        tick.setAttribute('stroke', (day % 5 === 0) ? '#D9C5C0' : '#EDE0DC');
+        tick.setAttribute('stroke-width', (day % 5 === 0) ? '1.5' : '1');
+        svgTicks.appendChild(tick);
+      }
+
+      // Arc segments
+      const segments = [
+        { from: 0, to: periodLen, color: '#7B2D42', label: 'Period' },
+        { from: periodLen, to: fertileStartDay, color: '#E8A0B0', label: null },
+        { from: fertileStartDay, to: fertileEndDay, color: '#D9A566', label: 'Fertile' },
+        { from: fertileEndDay, to: cycleLen, color: '#E8A0B0', label: null }
+      ];
+
+      segments.forEach(seg => {
+        if (seg.to <= seg.from) return;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', arcPath(cx, cy, r, dayToDeg(seg.from), dayToDeg(seg.to)));
+        path.setAttribute('stroke', seg.color);
+        path.setAttribute('stroke-width', '14');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke-linecap', 'round');
+        svgArcs.appendChild(path);
+
+        // Add label at midpoint of labeled segments
+        if (seg.label) {
+          const midAngle = dayToDeg((seg.from + seg.to) / 2);
+          const labelR = r + 20;
+          const pos = polar(cx, cy, labelR, midAngle);
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', pos.x); text.setAttribute('y', pos.y);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'central');
+          text.setAttribute('font-size', '9');
+          text.setAttribute('font-family', 'Space Grotesk, sans-serif');
+          text.setAttribute('font-weight', '600');
+          text.setAttribute('fill', seg.color);
+          text.setAttribute('letter-spacing', '0.5');
+          text.textContent = seg.label.toUpperCase();
+          svgLabels.appendChild(text);
+        }
+      });
+
+      // Ovulation label at ovulation day
+      const ovAngle = dayToDeg(ovulationDay);
+      const ovLabelPos = polar(cx, cy, r + 20, ovAngle);
+      const ovText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      ovText.setAttribute('x', ovLabelPos.x); ovText.setAttribute('y', ovLabelPos.y);
+      ovText.setAttribute('text-anchor', 'middle');
+      ovText.setAttribute('dominant-baseline', 'central');
+      ovText.setAttribute('font-size', '8');
+      ovText.setAttribute('font-family', 'Space Grotesk, sans-serif');
+      ovText.setAttribute('font-weight', '700');
+      ovText.setAttribute('fill', '#B8883A');
+      ovText.textContent = 'OV';
+      svgLabels.appendChild(ovText);
+
+      // Small ovulation diamond marker on the ring
+      const ovPos = polar(cx, cy, r, ovAngle);
+      const ovDot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      ovDot.setAttribute('cx', ovPos.x); ovDot.setAttribute('cy', ovPos.y);
+      ovDot.setAttribute('r', '4'); ovDot.setAttribute('fill', '#fff');
+      ovDot.setAttribute('stroke', '#B8883A'); ovDot.setAttribute('stroke-width', '2');
+      svgArcs.appendChild(ovDot);
+
+      // Today marker — with pulse glow
+      let markerDay = ((info.dayInCycle - 1) % cycleLen + cycleLen) % cycleLen;
+      const pos = polar(cx, cy, r, dayToDeg(markerDay));
+
+      // Pulsing glow ring behind marker
+      const glow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      glow.setAttribute('cx', pos.x); glow.setAttribute('cy', pos.y);
+      glow.setAttribute('r', '14');
+      glow.setAttribute('fill', 'none');
+      glow.setAttribute('stroke', '#E8487A');
+      glow.setAttribute('stroke-width', '2');
+      glow.setAttribute('opacity', '0.4');
+      const anim = document.createElementNS('http://www.w3.org/2000/svg', 'animate');
+      anim.setAttribute('attributeName', 'opacity');
+      anim.setAttribute('values', '0.2;0.6;0.2');
+      anim.setAttribute('dur', '2s');
+      anim.setAttribute('repeatCount', 'indefinite');
+      glow.appendChild(anim);
+      svgMarker.appendChild(glow);
+
+      // Solid marker dot
+      const marker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      marker.setAttribute('cx', pos.x); marker.setAttribute('cy', pos.y);
+      marker.setAttribute('r', '8');
+      marker.setAttribute('fill', '#2A1520');
+      marker.setAttribute('stroke', '#FFF9F6');
+      marker.setAttribute('stroke-width', '3');
+      svgMarker.appendChild(marker);
+
+      document.getElementById('ring-day').textContent = 'Day ' + info.dayInCycle;
+      document.getElementById('ring-phase').textContent = info.phase;
+      const daysToNext = daysBetween(today(), info.nextPeriod);
+      document.getElementById('ring-sub').textContent = daysToNext >= 0
+        ? `${daysToNext} day${daysToNext === 1 ? '' : 's'} to next period`
+        : `${Math.abs(daysToNext)} day${Math.abs(daysToNext) === 1 ? '' : 's'} late`;
+    }
+
+
+
+    /* ============================================================
+       RENDER: OVERVIEW
+       ============================================================ */
+    function renderOverview() {
+      const info = getCycleInfo();
+      renderRing(info);
+
+      // Next period: show range if irregular, single date if regular
+      if (info.hasData) {
+        if (info.isIrregular) {
+          document.getElementById('next-period').textContent =
+            niceDate(info.nextPeriodEarly) + ' – ' + niceDate(info.nextPeriodLate);
+          document.getElementById('irregularity-note').textContent =
+            'Your cycles have been irregular lately, so this is a wider estimate.';
+          document.getElementById('irregularity-note').style.display = 'block';
+        } else {
+          document.getElementById('next-period').textContent = niceDate(info.nextPeriod);
+          document.getElementById('irregularity-note').style.display = 'none';
+        }
+      } else {
+        document.getElementById('next-period').textContent = '— log or import a period first';
+        document.getElementById('irregularity-note').style.display = 'none';
+      }
+
+      document.getElementById('next-ovulation').textContent = info.hasData ? niceDate(info.ovulation) : '—';
+      document.getElementById('avg-cycle').textContent = info.avgCycle + ' days';
+      const trend = getCycleTrend();
+      const trendEl = document.getElementById('cycle-trend');
+      trendEl.textContent = trend.label;
+      trendEl.className = 'info-value ' + trend.cls;
+
+      const btn = document.getElementById('period-toggle-btn');
+      const t = fmt(today());
+      const flowToday = DATA.entries[t] && DATA.entries[t].flow && DATA.entries[t].flow !== 'none';
+      btn.textContent = flowToday ? '✓ Period logged today' : 'Mark period started today';
+      renderRecentList();
+    }
+
+    function renderRecentList() {
+      const list = document.getElementById('recent-list');
+      const dates = Object.keys(DATA.entries).sort().reverse().slice(0, 5);
+      if (dates.length === 0) { list.innerHTML = `<div class="empty-state"><div class="display">Nothing logged yet</div>Tap the + button or bulk import your past history.</div>`; return; }
+      list.innerHTML = dates.map(ds => {
+        const e = DATA.entries[ds]; const d = parseDate(ds); const tags = [];
+        if (e.flow && e.flow !== 'none') tags.push(`<span class="tag">${e.flow}</span>`);
+        if (e.mood) tags.push(`<span class="tag">${e.mood}</span>`);
+        (e.symptoms || []).slice(0, 3).forEach(s => tags.push(`<span class="tag">${s}</span>`));
+        return `<div class="log-entry" onclick="openLogModal('${ds}')">
+      <div><div class="log-date">${niceDate(d)}</div><div class="log-meta">${e.notes ? e.notes.slice(0, 40) + (e.notes.length > 40 ? '…' : '') : 'no notes'}</div></div>
+      <div class="log-tags">${tags.join('')}</div>
+    </div>`;
+      }).join('');
+    }
+
+    /* ============================================================
+       CALENDAR
+       ============================================================ */
+    let calMonth = new Date().getMonth(), calYear = new Date().getFullYear();
+    function shiftMonth(n) { calMonth += n; if (calMonth < 0) { calMonth = 11; calYear--; } if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+    function renderCalendar() {
+      document.getElementById('cal-dow-row').innerHTML = ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => `<div class="cal-dow">${d}</div>`).join('');
+      document.getElementById('cal-title').textContent = new Date(calYear, calMonth, 1).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+      const info = getCycleInfo();
+      const firstDay = new Date(calYear, calMonth, 1).getDay();
+      const numDays = new Date(calYear, calMonth + 1, 0).getDate();
+      let html = ''; for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell empty"></div>`;
+      for (let day = 1; day <= numDays; day++) {
+        const d = new Date(calYear, calMonth, day); const ds = fmt(d);
+        const entry = DATA.entries[ds];
+        let cls = 'cal-cell';
+        if (fmt(d) === fmt(today())) cls += ' today';
+        const isLoggedPeriod = entry && entry.flow && entry.flow !== 'none';
+        let isPredictedPeriod = false, isFertile = false, isOvulation = false;
+        if (isLoggedPeriod) { cls += ' period'; }
+        else if (info.hasData) {
+          let diff = daysBetween(info.last, d);
+          let cyclePos = ((diff % info.avgCycle) + info.avgCycle) % info.avgCycle;
+          if (d >= info.last) {
+            if (cyclePos < info.avgPeriod) isPredictedPeriod = true;
+            else if (cyclePos >= (info.avgCycle - info.luteal - 5) && cyclePos <= (info.avgCycle - info.luteal + 1)) {
+              isFertile = true;
+              if (cyclePos === (info.avgCycle - info.luteal)) isOvulation = true;
+            }
+          }
+          if (isPredictedPeriod) cls += ' predicted';
+          else if (isOvulation) cls += ' ovulation';
+          else if (isFertile) cls += ' fertile';
+        }
+        html += `<div class="${cls}" onclick="openLogModal('${ds}')">${day}${entry ? '<span class="cal-dot"></span>' : ''}</div>`;
+      }
+      document.getElementById('cal-grid').innerHTML = html;
+    }
+
+    /* ============================================================
+       HISTORY
+       ============================================================ */
+    function renderHistory() {
+      const starts = getPeriodStartDates().slice().reverse();
+      const container = document.getElementById('history-list');
+      if (starts.length === 0) { container.innerHTML = `<div class="empty-state"><div class="display">No cycles yet</div>Bulk import your history, or log periods one by one.</div>`; return; }
+      const allStarts = getPeriodStartDates();
+      container.innerHTML = starts.map(ds => {
+        const idx = allStarts.indexOf(ds); const d = parseDate(ds);
+        let lengthLabel;
+        if (idx < allStarts.length - 1) lengthLabel = `${daysBetween(d, parseDate(allStarts[idx + 1]))} day cycle`;
+        else lengthLabel = 'current cycle';
+        return `<div class="log-entry"><div><div class="log-date">${niceDate(d)}</div><div class="log-meta">Period started</div></div><div class="log-tags"><span class="tag">${lengthLabel}</span></div></div>`;
+      }).join('');
+    }
+
+    /* ============================================================
+       INSIGHTS
+       ============================================================ */
+    function renderInsights() {
+      const cycleLengths = getCycleLengths();
+      const filteredLengths = getFilteredCycleLengths();
+      document.getElementById('stat-cycles').textContent = getPeriodStartDates().length;
+      document.getElementById('stat-avgcycle').textContent = filteredLengths.length ? Math.round(weightedAvg(filteredLengths.slice(-12))) : '–';
+      const reg = getRegularity();
+      document.getElementById('stat-regularity').textContent = reg.label;
+
+      // Outlier note
+      const outliers = getOutlierCount();
+      const outlierNote = document.getElementById('outlier-note');
+      if (outliers > 0) {
+        outlierNote.textContent = `${outliers} outlier cycle(s) excluded from averaging (< 15 or > 60 days).`;
+        outlierNote.style.display = 'block';
+      } else {
+        outlierNote.style.display = 'none';
+      }
+
+      const trend = getCycleTrend();
+      document.getElementById('behavior-note').textContent = filteredLengths.length >= 4
+        ? `Your recent cycles are ${trend.label === 'stable' ? 'holding steady' : trend.label} compared to earlier ones, and overall regularity looks "${reg.label.toLowerCase()}."`
+        : 'Import a bit more history for a clearer read on your pattern.';
+
+      // Bar chart shows RAW (unfiltered) lengths so the user sees all data
+      const recent = cycleLengths.slice(-14);
+      const chart = document.getElementById('cycle-bar-chart');
+      if (recent.length === 0) { chart.innerHTML = `<div class="empty-state">Log or import at least two periods to see your trend.</div>`; }
+      else {
+        const max = Math.max(...recent, 35);
+        chart.innerHTML = recent.map(len => {
+          const h = Math.max(8, (len / max) * 100);
+          const isOutlier = len < 15 || len > 60;
+          return `<div class="bar-col"><div class="bar" style="height:${h}%;${isOutlier ? ' opacity:0.4;' : ''}"></div><div class="bar-label">${len}d</div></div>`;
+        }).join('');
+      }
+
+      const symptomCounts = {};
+      Object.values(DATA.entries).forEach(e => (e.symptoms || []).forEach(s => symptomCounts[s] = (symptomCounts[s] || 0) + 1));
+      const symptomEntries = Object.entries(symptomCounts).sort((a, b) => b[1] - a[1]).slice(0, 7);
+      const symptomChart = document.getElementById('symptom-chart');
+      if (symptomEntries.length === 0) { symptomChart.innerHTML = `<div class="empty-state">No symptoms logged yet.</div>`; }
+      else {
+        const max = Math.max(...symptomEntries.map(e => e[1]));
+        symptomChart.innerHTML = symptomEntries.map(([name, count]) => `<div class="hbar-row"><div class="hbar-label">${name}</div><div class="hbar-track"><div class="hbar-fill" style="width:${(count / max) * 100}%"></div></div><div class="hbar-val">${count}</div></div>`).join('');
+      }
+
+      const moodCounts = {};
+      Object.values(DATA.entries).forEach(e => { if (e.mood) moodCounts[e.mood] = (moodCounts[e.mood] || 0) + 1; });
+      const moodEntries = Object.entries(moodCounts).sort((a, b) => b[1] - a[1]);
+      const moodChart = document.getElementById('mood-chart');
+      if (moodEntries.length === 0) { moodChart.innerHTML = `<div class="empty-state">No moods logged yet.</div>`; }
+      else {
+        const max = Math.max(...moodEntries.map(e => e[1]));
+        moodChart.innerHTML = moodEntries.map(([name, count]) => `<div class="hbar-row"><div class="hbar-label">${name}</div><div class="hbar-track"><div class="hbar-fill" style="width:${(count / max) * 100}%; background:var(--pink);"></div></div><div class="hbar-val">${count}</div></div>`).join('');
+      }
+    }
+
+    /* ============================================================
+       SETTINGS
+       ============================================================ */
+    function loadSettingsToForm() {
+      document.getElementById('setting-cycle-length').value = DATA.settings.cycleLength;
+      document.getElementById('setting-luteal-length').value = DATA.settings.lutealLength;
+      document.getElementById('setting-period-length').value = DATA.settings.periodLength;
+      document.getElementById('setting-notify-days').value = DATA.settings.notifyDaysBefore;
+      document.getElementById('setting-notify-ovulation').checked = !!DATA.settings.notifyOvulation;
+    }
+    async function saveSettings() {
+      DATA.settings.cycleLength = parseInt(document.getElementById('setting-cycle-length').value) || 28;
+      DATA.settings.lutealLength = parseInt(document.getElementById('setting-luteal-length').value) || 14;
+      DATA.settings.periodLength = parseInt(document.getElementById('setting-period-length').value) || 5;
+      DATA.settings.notifyDaysBefore = parseInt(document.getElementById('setting-notify-days').value) || 0;
+      DATA.settings.notifyOvulation = document.getElementById('setting-notify-ovulation').checked;
+      await writeSettings();
+      renderAll();
+      showToast('Settings saved');
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `redflag-backup-${fmt(today())}.json`; a.click();
+      URL.revokeObjectURL(url);
+      showToast('Backup downloaded');
+    }
+    async function importData(evt) {
+      const file = evt.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function (e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.entries && parsed.settings) {
+            const batch = db.batch();
+            Object.entries(parsed.entries).forEach(([ds, entry]) => { batch.set(entriesCol().doc(ds), entry); });
+            await batch.commit();
+            DATA.settings = Object.assign(DATA.settings, parsed.settings);
+            await writeSettings();
+            showToast('Backup imported');
+          } else { showToast("That file doesn't look right"); }
+        } catch (err) { showToast('Could not read that file'); }
+      };
+      reader.readAsText(file);
+      evt.target.value = '';
+    }
+    async function clearAllData() {
+      if (confirm('This erases every entry and setting, permanently. Are you sure?')) {
+        const snap = await entriesCol().get();
+        const batch = db.batch();
+        snap.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+        DATA.settings = { cycleLength: 28, lutealLength: 14, periodLength: 5, notifyDaysBefore: 2, notifyOvulation: false };
+        await writeSettings();
+        showToast('All data erased');
+      }
+    }
+
+    /* ============================================================
+       BULK IMPORT
+       ============================================================ */
+    function openBulkImport() { document.getElementById('bulk-error').textContent = ''; document.getElementById('bulk-input').value = ''; document.getElementById('bulk-overlay').classList.add('open'); }
+    function closeBulkImport() { document.getElementById('bulk-overlay').classList.remove('open'); }
+
+    async function processBulkImport() {
+      const raw = document.getElementById('bulk-input').value;
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      const errEl = document.getElementById('bulk-error');
+      if (lines.length === 0) { errEl.textContent = 'Paste at least one line first.'; return; }
+
+      const batch = db.batch();
+      let count = 0, failed = [];
+      lines.forEach(line => {
+        const parts = line.split(',').map(p => p.trim());
+        const d = flexParseDate(parts[0]);
+        if (!d) { failed.push(line); return; }
+        const length = parts[1] ? parseInt(parts[1]) : 1;
+        for (let i = 0; i < Math.max(1, length); i++) {
+          const dayDate = addDays(d, i);
+          const ds = fmt(dayDate);
+          batch.set(entriesCol().doc(ds), Object.assign({}, DATA.entries[ds] || {}, { flow: 'medium' }));
+          count++;
+        }
+      });
+
+      if (failed.length) { errEl.textContent = `Couldn't parse ${failed.length} line(s): ${failed.slice(0, 3).join(' | ')}${failed.length > 3 ? '…' : ''}`; }
+      if (count === 0) return;
+
+      await batch.commit();
+      closeBulkImport();
+      showToast(`Imported ${lines.length - failed.length} cycle(s)`);
+    }
+
+    /* ============================================================
+       LOG MODAL
+       ============================================================ */
+    let editingDate = null;
+    function openLogModal(dateStr) {
+      editingDate = dateStr || fmt(today());
+      document.getElementById('log-date').value = editingDate;
+      const existing = DATA.entries[editingDate] || {};
+      document.querySelectorAll('.flow-opt').forEach(el => el.classList.toggle('selected', (existing.flow || 'none') === el.dataset.flow));
+      document.querySelectorAll('#symptom-group .chip').forEach(el => el.classList.toggle('selected', (existing.symptoms || []).includes(el.dataset.symptom)));
+      document.querySelectorAll('#mood-group .chip').forEach(el => el.classList.toggle('selected', existing.mood === el.dataset.mood));
+      document.getElementById('log-notes').value = existing.notes || '';
+      const delRow = document.getElementById('delete-entry-row');
+      delRow.innerHTML = DATA.entries[editingDate] ? `<button class="btn btn-danger btn-block" onclick="deleteLogEntry()">Delete this entry</button>` : '';
+      document.getElementById('log-overlay').classList.add('open');
+    }
+    function closeLogModal() { document.getElementById('log-overlay').classList.remove('open'); editingDate = null; }
+
+    document.getElementById('flow-group').addEventListener('click', e => { const opt = e.target.closest('.flow-opt'); if (!opt) return; document.querySelectorAll('.flow-opt').forEach(el => el.classList.remove('selected')); opt.classList.add('selected'); });
+    document.getElementById('symptom-group').addEventListener('click', e => { const chip = e.target.closest('.chip'); if (!chip) return; chip.classList.toggle('selected'); });
+    document.getElementById('mood-group').addEventListener('click', e => { const chip = e.target.closest('.chip'); if (!chip) return; const already = chip.classList.contains('selected'); document.querySelectorAll('#mood-group .chip').forEach(el => el.classList.remove('selected')); if (!already) chip.classList.add('selected'); });
+
+    async function saveLogEntry() {
+      const dateStr = document.getElementById('log-date').value || editingDate;
+      const flowEl = document.querySelector('.flow-opt.selected');
+      const flow = flowEl ? flowEl.dataset.flow : 'none';
+      const symptoms = Array.from(document.querySelectorAll('#symptom-group .chip.selected')).map(el => el.dataset.symptom);
+      const moodEl = document.querySelector('#mood-group .chip.selected');
+      const mood = moodEl ? moodEl.dataset.mood : null;
+      const notes = document.getElementById('log-notes').value.trim();
+      if (flow === 'none' && symptoms.length === 0 && !mood && !notes) { await deleteEntry(dateStr); }
+      else { await writeEntry(dateStr, { flow, symptoms, mood, notes }); }
+      closeLogModal();
+      showToast('Entry saved');
+    }
+    async function deleteLogEntry() { if (editingDate) await deleteEntry(editingDate); closeLogModal(); showToast('Entry deleted'); }
+    function togglePeriodToday() {
+      openLogModal(fmt(today()));
+      setTimeout(() => {
+        const sel = document.querySelector('.flow-opt.selected');
+        if (!sel || sel.dataset.flow === 'none') { document.querySelectorAll('.flow-opt').forEach(el => el.classList.remove('selected')); document.querySelector('.flow-opt[data-flow="medium"]').classList.add('selected'); }
+      }, 0);
+    }
+
+    /* ============================================================
+       TABS + TOAST
+       ============================================================ */
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById('view-' + tab.dataset.view).classList.add('active');
+        if (tab.dataset.view === 'calendar') renderCalendar();
+        if (tab.dataset.view === 'history') renderHistory();
+        if (tab.dataset.view === 'insights') renderInsights();
+        if (tab.dataset.view === 'settings') loadSettingsToForm();
+      });
+    });
+    let toastTimer;
+    function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2200); }
+
+    /* ============================================================
+       INIT
+       ============================================================ */
+    function renderAll() { renderOverview(); renderCalendar(); renderHistory(); renderInsights(); loadSettingsToForm(); }
+
+    if (messaging) {
+      messaging.onMessage(payload => {
+        showToast(payload.notification ? payload.notification.title : 'Red Flag reminder');
+      });
+    }
+  </script>
+</body>
+
+</html>

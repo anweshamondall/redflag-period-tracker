@@ -1,0 +1,18 @@
+{
+  "name": "Red Flag",
+  "short_name": "Red Flag",
+  "description": "Your cycle, kept quietly.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFF9F6",
+  "theme_color": "#7B2D42",
+  "icons": [
+    {
+      "src": "app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
