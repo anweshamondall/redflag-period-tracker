@@ -1,4 +1,4 @@
-// This file must sit in the SAME folder as index.html, and must be reachable
+// This file must sit in the SAME folder as index.html and must be reachable
 // at the exact URL yoursite.com/firebase-messaging-sw.js
 
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
