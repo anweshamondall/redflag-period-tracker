@@ -959,9 +959,7 @@
        DATA BACKUP / IMPORT
        ============================================================ */
     .backup-actions {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+      width: 100%;
     }
     .backup-action {
       display: flex;
@@ -973,6 +971,96 @@
     }
     .backup-action strong { font-size: 13px; }
     .backup-action span { font-size: 11px; color: var(--ink-soft); font-weight: 500; }
+
+    /* Single export button + format picker */
+    .export-menu-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+    }
+    .export-main-btn {
+      width: 100%;
+      position: relative;
+      padding-right: 52px;
+    }
+    .export-main-btn::after {
+      content: "⌄";
+      position: absolute;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-55%);
+      font-size: 20px;
+      line-height: 1;
+      opacity: .65;
+    }
+    .export-menu {
+      position: absolute;
+      z-index: 100;
+      left: 0;
+      right: 0;
+      top: calc(100% + 8px);
+      display: none;
+      padding: 8px;
+      background: rgba(255, 250, 248, .96);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(123, 45, 66, .12);
+      border-radius: 18px;
+      box-shadow: 0 18px 45px rgba(70, 30, 40, .14), 0 4px 12px rgba(70, 30, 40, .06);
+    }
+    .export-menu.open {
+      display: block;
+      animation: exportMenuIn .16s ease-out;
+    }
+    @keyframes exportMenuIn {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .export-menu-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      border: 0;
+      background: transparent;
+      padding: 13px 14px;
+      border-radius: 13px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--ink);
+      font-family: inherit;
+      transition: background .15s ease, transform .15s ease;
+    }
+    .export-menu-item:hover {
+      background: rgba(123, 45, 66, .06);
+      transform: translateX(2px);
+    }
+    .export-menu-item:active { transform: scale(.985); }
+    .export-menu-icon {
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 12px;
+      background: rgba(123, 45, 66, .08);
+      color: var(--wine);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .04em;
+    }
+    .export-menu-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .export-menu-text strong { font-size: 14px; }
+    .export-menu-text small {
+      font-size: 12px;
+      color: var(--ink-soft);
+      line-height: 1.3;
+    }
     .import-choice-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1007,7 +1095,7 @@
     }
     .format-note strong { color: var(--ink); }
     @media (max-width: 620px) {
-      .backup-actions { grid-template-columns: 1fr; }
+      .export-menu-wrap { max-width: none; }
       .backup-action { min-height: 62px; }
       .import-choice-grid { grid-template-columns: 1fr; }
     }
@@ -1440,18 +1528,36 @@
             <h2>Your data</h2>
             <div class="stamp-badge">cloud<br>synced</div>
           </div>
-          <div class="card-sub">Stored securely in your Red Flag cloud account — synced automatically to any device
-            you log into.</div>
+          <div class="card-sub">Keep a copy of your cycle history for your records, sharing, or safekeeping.</div>
           <div class="backup-actions">
-            <button class="btn btn-ghost backup-action" onclick="exportJSON()">
-              <strong>Export JSON</strong><span>Full restore-ready backup</span>
-            </button>
-            <button class="btn btn-ghost backup-action" onclick="exportCSV()">
-              <strong>Export CSV</strong><span>Easy to read or open in Sheets</span>
-            </button>
-            <button class="btn btn-ghost backup-action" onclick="exportPDF()">
-              <strong>Export PDF</strong><span>Readable copy of your data</span>
-            </button>
+            <div class="export-menu-wrap">
+              <button class="btn btn-ghost backup-action export-main-btn" onclick="toggleExportMenu()" id="export-main-btn" type="button">
+                <strong>Export data</strong><span>Choose a format for your cycle history</span>
+              </button>
+              <div class="export-menu" id="export-menu">
+                <button type="button" class="export-menu-item" onclick="handleExportChoice('pdf')">
+                  <span class="export-menu-icon">PDF</span>
+                  <span class="export-menu-text">
+                    <strong>PDF</strong>
+                    <small>Easy to view, save or share</small>
+                  </span>
+                </button>
+                <button type="button" class="export-menu-item" onclick="handleExportChoice('csv')">
+                  <span class="export-menu-icon">CSV</span>
+                  <span class="export-menu-text">
+                    <strong>CSV</strong>
+                    <small>Easy to open and work with</small>
+                  </span>
+                </button>
+                <button type="button" class="export-menu-item" onclick="handleExportChoice('json')">
+                  <span class="export-menu-icon">{ }</span>
+                  <span class="export-menu-text">
+                    <strong>JSON</strong>
+                    <small>Full backup for restoring your data</small>
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
           <div class="btn-row" style="margin-top:10px;">
             <button class="btn btn-primary" onclick="openImportModal()">Import data</button>
@@ -1552,7 +1658,7 @@
       <div class="modal-head">
         <h2>Import your data</h2><button class="modal-close" onclick="closeImportModal()">✕</button>
       </div>
-      <div class="card-sub" style="margin-bottom:14px;">Bring your Red Flag backup to this account without having to rebuild your history manually.</div>
+      <div class="card-sub" style="margin-bottom:14px;">Bring your cycle history with you. Upload a Red Flag backup, import a CSV, or paste your data directly.</div>
 
       <div class="import-choice-grid">
         <button class="import-choice" onclick="chooseImportFile('json')">
@@ -1570,7 +1676,7 @@
       </div>
 
       <div class="format-note">
-        <strong>Tip:</strong> JSON keeps everything exactly. CSV is best for editing. PDF is mainly for viewing/sharing and can only be imported when it was exported by Red Flag.
+        <strong>Tip:</strong> JSON is best for a complete backup. CSV is useful for structured records, while PDF is best for keeping a readable copy.
       </div>
 
       <div class="import-paste-wrap">
@@ -2340,6 +2446,37 @@
     function getBackupFilename(ext) {
       return `redflag-backup-${fmt(today())}.${ext}`;
     }
+
+    /* ============================================================
+       EXPORT MENU
+       ============================================================ */
+    function toggleExportMenu() {
+      const menu = document.getElementById('export-menu');
+      if (!menu) return;
+      menu.classList.toggle('open');
+    }
+
+    function closeExportMenu() {
+      const menu = document.getElementById('export-menu');
+      if (!menu) return;
+      menu.classList.remove('open');
+    }
+
+    function handleExportChoice(format) {
+      closeExportMenu();
+      if (format === 'pdf') exportPDF();
+      else if (format === 'csv') exportCSV();
+      else if (format === 'json') exportJSON();
+    }
+
+    document.addEventListener('click', function(event) {
+      const wrapper = document.querySelector('.export-menu-wrap');
+      if (wrapper && !wrapper.contains(event.target)) closeExportMenu();
+    });
+
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'Escape') closeExportMenu();
+    });
 
     function exportJSON() {
       const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json;charset=utf-8' });
