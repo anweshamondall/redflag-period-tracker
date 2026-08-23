@@ -1061,68 +1061,9 @@
       color: var(--ink-soft);
       line-height: 1.3;
     }
-    .import-modal .import-intro {
-      margin-bottom: 18px;
-      line-height: 1.5;
-    }
-
-    .import-choice-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 4px;
-    }
-
-    .import-choice {
-      border: 1.5px solid var(--line);
-      background: var(--surface);
-      border-radius: 16px;
-      padding: 16px;
-      min-height: 76px;
-      text-align: left;
-      cursor: pointer;
-      color: var(--ink);
-      font-family: inherit;
-      transition: transform .12s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
-    }
-
-    .import-choice:hover {
-      border-color: var(--wine);
-      background: var(--surface-2);
-      box-shadow: 0 4px 14px rgba(123, 45, 66, .08);
-    }
-
-    .import-choice-wide { grid-column: 1 / -1; }
-
-    .import-choice:active { transform: translateY(2px); }
-
-    .import-choice strong {
-      display: block;
-      font-size: 13px;
-      margin-bottom: 5px;
-    }
-
-    .import-choice span {
-      display: block;
-      font-size: 11px;
-      color: var(--ink-soft);
-      line-height: 1.4;
-    }
-
-    .import-paste-wrap {
-      margin-top: 16px;
-      padding-top: 16px;
-      border-top: 1px solid var(--line);
-    }
-
-    .import-paste-wrap textarea {
-      margin-bottom: 8px;
-    }
-
     @media (max-width: 620px) {
       .export-menu-wrap { max-width: none; }
       .backup-action { min-height: 62px; }
-      .import-choice-grid { grid-template-columns: 1fr; }
     }
 
     /* ============================================================
@@ -1228,6 +1169,128 @@
       background: #7CB88F;
     }
     .sync-dot.off { background: var(--gold); }
+
+    /* ============================================================
+       IMPORT MODAL
+       ============================================================ */
+    .import-modal { max-width: 560px; }
+
+    .import-intro {
+      margin-top: -8px;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .import-method {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-align: left;
+      border: 1.5px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      border-radius: 16px;
+      padding: 15px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 3px 0 #E8D0CC;
+      transition: transform .1s ease, border-color .15s ease, background .15s ease;
+    }
+
+    .import-method:hover {
+      border-color: var(--rose);
+      background: var(--surface-2);
+    }
+
+    .import-method:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 #E8D0CC;
+    }
+
+    .import-method-icon {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: var(--surface-2);
+      color: var(--wine);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .import-method span:nth-child(2) {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .import-method strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+
+    .import-method small {
+      display: block;
+      color: var(--ink-soft);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .import-method-arrow {
+      color: var(--ink-soft);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .import-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 16px 0;
+      color: var(--ink-soft);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    .import-divider::before,
+    .import-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--line);
+    }
+
+    .import-paste-wrap {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .import-paste-wrap label { margin-bottom: 8px; }
+
+    .import-paste-wrap .mono-input {
+      min-height: 150px;
+      margin-bottom: 8px;
+    }
+
+    .import-help {
+      color: var(--ink-soft);
+      font-size: 11px;
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    @media (max-width: 620px) {
+      .import-modal {
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+    }
 
     /* ============================================================
        PRIVACY HINT (caption text under date inputs in modals)
@@ -1460,11 +1523,12 @@
           <div class="card-head">
             <h2>Bring in past data</h2>
           </div>
-          <div class="card-sub">Add cycle history you already have, so it can live alongside the rest of your Red Flag records.</div>
+          <div class="card-sub">Bring in your past cycle history from a PDF, CSV, or copied dates.</div>
           <div class="btn-row" style="margin-top:14px;">
-            <button class="btn btn-primary" onclick="openImportModal()">Import data</button>
+            <button class="btn btn-primary btn-block" type="button" onclick="openImportModal()">
+              Import past data
+            </button>
           </div>
-          <input type="file" id="import-file" accept=".csv,.pdf,text/csv,application/pdf" onchange="importData(event)" style="display:none;">
         </div>
       </div>
 
@@ -1656,48 +1720,64 @@
   </div>
 
   <!-- DATA IMPORT MODAL -->
-  <div class="overlay" id="import-overlay">
+  <div class="overlay" id="import-overlay" aria-hidden="true">
     <div class="modal import-modal">
       <div class="modal-head">
-        <h2>Import your data</h2>
-        <button class="modal-close" onclick="closeImportModal()" aria-label="Close">✕</button>
+        <h2>Bring in past data</h2>
+        <button class="modal-close" type="button" onclick="closeImportModal()" aria-label="Close">✕</button>
       </div>
 
       <div class="card-sub import-intro">
-        Bring your cycle history into Red Flag. Choose the option that works best for you.
+        Choose a backup file from your phone, or paste your period dates below.
       </div>
 
-      <div class="import-choice-grid">
-        <button class="import-choice" type="button" onclick="chooseImportFile('csv')">
-          <strong>Upload CSV</strong>
-          <span>Best for a structured backup.</span>
-        </button>
+      <input
+        type="file"
+        id="import-file"
+        accept=".pdf,.csv,application/pdf,text/csv"
+        onchange="importData(event)"
+        style="display:none;"
+      >
 
-        <button class="import-choice" type="button" onclick="chooseImportFile('pdf')">
-          <strong>Upload PDF</strong>
-          <span>Restore a Red Flag report.</span>
-        </button>
+      <button class="import-method" type="button" onclick="openFilePicker()">
+        <span class="import-method-icon">↥</span>
+        <span>
+          <strong>Choose PDF or CSV</strong>
+          <small>Select a file from your phone</small>
+        </span>
+        <span class="import-method-arrow">›</span>
+      </button>
 
-        <button class="import-choice import-choice-wide" type="button" onclick="showImportPaste()">
-          <strong>Paste backup data</strong>
-          <span>Copy and paste your saved backup directly.</span>
-        </button>
-      </div>
+      <div class="import-divider"><span>OR</span></div>
+
+      <button class="import-method" type="button" onclick="showImportPaste()">
+        <span class="import-method-icon">⌨</span>
+        <span>
+          <strong>Paste period dates</strong>
+          <small>Copy dates directly into Red Flag</small>
+        </span>
+        <span class="import-method-arrow">›</span>
+      </button>
 
       <div class="import-paste-wrap" id="import-paste-panel" style="display:none;">
-        <label for="import-paste">Paste backup data</label>
-        <textarea class="mono-input" id="import-paste"
-          placeholder="Paste your Red Flag backup here…"></textarea>
+        <label for="import-paste">Paste your dates</label>
+        <textarea
+          class="mono-input"
+          id="import-paste"
+          placeholder="2024-01-04, 5
+2024-02-01, 4
+2024-03-02
+2024-03-29, 6"></textarea>
+        <div class="import-help">One entry per line. Add the period length after a comma if you know it.</div>
         <div class="auth-error" id="import-error"></div>
         <div class="btn-row">
-          <button class="btn btn-primary btn-block" type="button" onclick="importPastedData()">Import data</button>
+          <button class="btn btn-primary btn-block" type="button" onclick="importPastedDates()">Import dates</button>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- FAB (Floating Action Button for logging) -->
+  <!-- FAB (Floating Action Button for logging) --><!-- FAB (Floating Action Button for logging) -->
   <button class="fab" onclick="openLogModal()" id="fab-log" style="display:none;" title="Log today">+</button>
 
   <div class="toast" id="toast"></div>
@@ -2581,7 +2661,9 @@
       showToast('PDF backup downloaded');
     }
 
+    // IMPORT — one clean entry point from History.
     function openImportModal() {
+      const overlay = document.getElementById('import-overlay');
       const pastePanel = document.getElementById('import-paste-panel');
       const pasteInput = document.getElementById('import-paste');
       const err = document.getElementById('import-error');
@@ -2589,12 +2671,28 @@
       if (pastePanel) pastePanel.style.display = 'none';
       if (pasteInput) pasteInput.value = '';
       if (err) err.textContent = '';
-
-      document.getElementById('import-overlay').classList.add('open');
+      if (overlay) {
+        overlay.classList.add('open');
+        overlay.setAttribute('aria-hidden', 'false');
+      }
     }
 
     function closeImportModal() {
-      document.getElementById('import-overlay').classList.remove('open');
+      const overlay = document.getElementById('import-overlay');
+      if (overlay) {
+        overlay.classList.remove('open');
+        overlay.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    // Opens the phone/device file picker. The browser will allow only PDF/CSV files.
+    function openFilePicker() {
+      const input = document.getElementById('import-file');
+      const err = document.getElementById('import-error');
+      if (!input) return;
+      if (err) err.textContent = '';
+      input.value = '';
+      input.click();
     }
 
     function showImportPaste() {
@@ -2613,11 +2711,56 @@
       });
     }
 
-    function chooseImportFile(kind) {
-      const input = document.getElementById('import-file');
-      input.dataset.kind = kind;
-      input.value = '';
-      input.click();
+    async function importPastedDates() {
+      const input = document.getElementById('import-paste');
+      const err = document.getElementById('import-error');
+      const raw = input ? input.value.trim() : '';
+
+      if (err) err.textContent = '';
+      if (!raw) {
+        if (err) err.textContent = 'Paste at least one period date first.';
+        return;
+      }
+
+      const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      const entries = {};
+      const failed = [];
+
+      lines.forEach(line => {
+        // Accept: YYYY-MM-DD
+        // Or:    YYYY-MM-DD, 5  (start date + period length)
+        const parts = line.split(',').map(part => part.trim());
+        const date = flexParseDate(parts[0]);
+        if (!date) {
+          failed.push(line);
+          return;
+        }
+
+        let length = parts[1] ? parseInt(parts[1], 10) : 1;
+        if (!Number.isFinite(length) || length < 1) length = 1;
+        length = Math.min(length, 31);
+
+        for (let i = 0; i < length; i++) {
+          const ds = fmt(addDays(date, i));
+          entries[ds] = Object.assign({}, DATA.entries[ds] || {}, { flow: 'medium' });
+        }
+      });
+
+      if (failed.length) {
+        if (err) err.textContent = `Couldn't read ${failed.length} line(s). Use YYYY-MM-DD, optionally followed by the period length.`;
+      }
+
+      if (!Object.keys(entries).length) return;
+
+      try {
+        await commitImportedEntries(entries);
+        closeImportModal();
+        showToast(`Imported ${lines.length - failed.length} period${lines.length - failed.length === 1 ? '' : 's'}`);
+        if (typeof renderAll === 'function') renderAll();
+      } catch (e) {
+        console.error(e);
+        if (err) err.textContent = e.message || 'Could not import those dates.';
+      }
     }
 
     async function commitImportedEntries(entries) {
@@ -2707,78 +2850,7 @@
       }
       closeImportModal();
       showToast(`Imported ${Object.keys(parsed.entries).length} cycle entr${Object.keys(parsed.entries).length === 1 ? 'y' : 'ies'}`);
-    }
-
-    async function importTextBackup(text) {
-      const trimmed = text.trim();
-      if (!trimmed) throw new Error('Paste some CSV data first.');
-      const parsedCSV = parseRedFlagCSV(trimmed);
-      return importParsedBackup({ settings: parsedCSV.settings, entries: parsedCSV.entries });
-    }
-
-    async function importPastedData() {
-      const err = document.getElementById('import-error');
-      const raw = document.getElementById('import-paste').value.trim();
-      err.textContent = '';
-
-      if (!raw) {
-        err.textContent = 'Paste your saved data first.';
-        return;
-      }
-
-      try {
-        // First try the normal Red Flag CSV backup format.
-        try {
-          await importTextBackup(raw);
-          return;
-        } catch (_) {
-          // If it is not a CSV backup, also accept a simple
-          // one-entry-per-line format.
-        }
-
-        const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
-        const batch = db.batch();
-        let count = 0;
-        const failed = [];
-
-        lines.forEach(line => {
-          const parts = line.split(',').map(part => part.trim());
-          const date = flexParseDate(parts[0]);
-
-          if (!date) {
-            failed.push(line);
-            return;
-          }
-
-          const lengthValue = parts[1] ? parseInt(parts[1], 10) : 1;
-          const length = Number.isFinite(lengthValue) ? Math.max(1, lengthValue) : 1;
-
-          for (let i = 0; i < length; i++) {
-            const ds = fmt(addDays(date, i));
-            batch.set(
-              entriesCol().doc(ds),
-              Object.assign({}, DATA.entries[ds] || {}, { flow: 'medium' })
-            );
-            count++;
-          }
-        });
-
-        if (failed.length) {
-          err.textContent =
-            `Couldn't read ${failed.length} line(s): ${failed.slice(0, 2).join(' | ')}${failed.length > 2 ? '…' : ''}`;
-        }
-
-        if (!count) {
-          throw new Error('No valid cycle data was found. Check the format and try again.');
-        }
-
-        await batch.commit();
-        closeImportModal();
-        showToast(`Imported ${lines.length - failed.length} cycle(s)`);
-      } catch (e) {
-        console.error(e);
-        err.textContent = e.message || 'Could not import that data.';
-      }
+      if (typeof renderAll === 'function') renderAll();
     }
 
     async function importPdfBackup(file) {
@@ -2802,23 +2874,32 @@
     async function importData(evt) {
       const file = evt.target.files[0];
       if (!file) return;
+
       const err = document.getElementById('import-error');
       if (err) err.textContent = '';
+
       try {
         const name = file.name.toLowerCase();
-        if (name.endsWith('.pdf') || file.type === 'application/pdf') {
+        const isPdf = name.endsWith('.pdf') || file.type === 'application/pdf';
+        const isCsv = name.endsWith('.csv') || file.type === 'text/csv';
+
+        if (isPdf) {
           await importPdfBackup(file);
-        } else if (name.endsWith('.csv') || file.type === 'text/csv') {
+        } else if (isCsv) {
           const text = await file.text();
           const parsed = parseRedFlagCSV(text);
           await importParsedBackup(parsed);
         } else {
-          throw new Error('Please choose a CSV or a Red Flag PDF.');
+          throw new Error('Please select a PDF or CSV file.');
         }
       } catch (e) {
         console.error(e);
-        if (!document.getElementById('import-overlay').classList.contains('open')) openImportModal();
-        document.getElementById('import-error').textContent = e.message || 'Could not import that file.';
+        const overlay = document.getElementById('import-overlay');
+        if (overlay) {
+          overlay.classList.add('open');
+          overlay.setAttribute('aria-hidden', 'false');
+        }
+        if (err) err.textContent = e.message || 'Could not import that file.';
       } finally {
         evt.target.value = '';
       }
