@@ -1061,40 +1061,64 @@
       color: var(--ink-soft);
       line-height: 1.3;
     }
+    .import-modal .import-intro {
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
     .import-choice-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
-      margin-bottom: 16px;
+      margin-bottom: 4px;
     }
+
     .import-choice {
       border: 1.5px solid var(--line);
       background: var(--surface);
       border-radius: 16px;
-      padding: 14px;
+      padding: 16px;
+      min-height: 76px;
       text-align: left;
       cursor: pointer;
       color: var(--ink);
       font-family: inherit;
-      transition: transform .12s ease, border-color .15s ease, background .15s ease;
+      transition: transform .12s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
-    .import-choice:hover { border-color: var(--wine); background: var(--surface-2); }
-    .import-choice-wide { grid-column: 1 / -1; }
-    .import-choice:active { transform: translateY(2px); }
-    .import-choice strong { display: block; font-size: 13px; margin-bottom: 4px; }
-    .import-choice span { display: block; font-size: 11px; color: var(--ink-soft); line-height: 1.35; }
-    .import-paste-wrap { margin-top: 4px; }
-    .import-paste-wrap textarea { margin-bottom: 8px; }
-    .format-note {
+
+    .import-choice:hover {
+      border-color: var(--wine);
       background: var(--surface-2);
-      border-radius: 14px;
-      padding: 11px 13px;
-      font-size: 11px;
-      line-height: 1.5;
-      color: var(--ink-soft);
-      margin-bottom: 14px;
+      box-shadow: 0 4px 14px rgba(123, 45, 66, .08);
     }
-    .format-note strong { color: var(--ink); }
+
+    .import-choice-wide { grid-column: 1 / -1; }
+
+    .import-choice:active { transform: translateY(2px); }
+
+    .import-choice strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .import-choice span {
+      display: block;
+      font-size: 11px;
+      color: var(--ink-soft);
+      line-height: 1.4;
+    }
+
+    .import-paste-wrap {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    .import-paste-wrap textarea {
+      margin-bottom: 8px;
+    }
+
     @media (max-width: 620px) {
       .export-menu-wrap { max-width: none; }
       .backup-action { min-height: 62px; }
@@ -1439,7 +1463,6 @@
           <div class="card-sub">Add cycle history you already have, so it can live alongside the rest of your Red Flag records.</div>
           <div class="btn-row" style="margin-top:14px;">
             <button class="btn btn-primary" onclick="openImportModal()">Import data</button>
-            <button class="btn btn-ghost" onclick="openBulkImport()">Bulk import past data</button>
           </div>
           <input type="file" id="import-file" accept=".csv,.pdf,text/csv,application/pdf" onchange="importData(event)" style="display:none;">
         </div>
@@ -1632,59 +1655,45 @@
     </div>
   </div>
 
-  <!-- BULK IMPORT MODAL -->
-  <div class="overlay" id="bulk-overlay">
-    <div class="modal">
-      <div class="modal-head">
-        <h2>Bulk import past cycles</h2><button class="modal-close" onclick="closeBulkImport()">✕</button>
-      </div>
-      <div class="card-sub" style="margin-bottom:14px;">
-        One entry per line: a date, or date + length (e.g. <span class="mono">2024-03-11, 5</span>).
-      </div>
-      <p class="privacy-hint">The only red flag here is the period blood 🚩 — your data stays private, synced only to your account.</p>
-      <textarea class="mono-input" id="bulk-input" placeholder="2024-01-04, 5
-2024-02-01, 4
-2024-03-02
-2024-03-29, 6
-..."></textarea>
-      <div class="auth-error" id="bulk-error"></div>
-      <div class="btn-row"><button class="btn btn-primary btn-block" onclick="processBulkImport()">Import all</button>
-      </div>
-    </div>
-  </div>
-
   <!-- DATA IMPORT MODAL -->
   <div class="overlay" id="import-overlay">
-    <div class="modal">
+    <div class="modal import-modal">
       <div class="modal-head">
-        <h2>Import your data</h2><button class="modal-close" onclick="closeImportModal()">✕</button>
+        <h2>Import your data</h2>
+        <button class="modal-close" onclick="closeImportModal()" aria-label="Close">✕</button>
       </div>
-      <div class="card-sub" style="margin-bottom:14px;">Bring your cycle history with you. Upload a CSV or a Red Flag PDF, or paste your CSV directly.</div>
+
+      <div class="card-sub import-intro">
+        Bring your cycle history into Red Flag. Choose the option that works best for you.
+      </div>
 
       <div class="import-choice-grid">
-        <button class="import-choice" onclick="chooseImportFile('csv')">
-          <strong>Upload CSV</strong><span>Useful for structured records and spreadsheet data.</span>
+        <button class="import-choice" type="button" onclick="chooseImportFile('csv')">
+          <strong>Upload CSV</strong>
+          <span>Best for a structured backup.</span>
         </button>
-        <button class="import-choice" onclick="chooseImportFile('pdf')">
-          <strong>Upload PDF</strong><span>Works with PDFs exported by Red Flag.</span>
+
+        <button class="import-choice" type="button" onclick="chooseImportFile('pdf')">
+          <strong>Upload PDF</strong>
+          <span>Restore a Red Flag report.</span>
         </button>
-        <button class="import-choice import-choice-wide" onclick="focusImportPaste()">
-          <strong>Paste CSV</strong><span>Paste your cycle history directly — no file needed.</span>
+
+        <button class="import-choice import-choice-wide" type="button" onclick="showImportPaste()">
+          <strong>Paste backup data</strong>
+          <span>Copy and paste your saved backup directly.</span>
         </button>
       </div>
 
-      <div class="format-note">
-        <strong>Tip:</strong> CSV works well for structured records. PDF is useful when you have a Red Flag report you want to bring back into the app.
-      </div>
-
-      <div class="import-paste-wrap">
-        <label for="import-paste">Or paste your CSV here</label>
-        <textarea class="mono-input" id="import-paste" placeholder='Paste Red Flag CSV here...'></textarea>
+      <div class="import-paste-wrap" id="import-paste-panel" style="display:none;">
+        <label for="import-paste">Paste backup data</label>
+        <textarea class="mono-input" id="import-paste"
+          placeholder="Paste your Red Flag backup here…"></textarea>
         <div class="auth-error" id="import-error"></div>
         <div class="btn-row">
-          <button class="btn btn-primary btn-block" onclick="importPastedData()">Import pasted data</button>
+          <button class="btn btn-primary btn-block" type="button" onclick="importPastedData()">Import data</button>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -2276,7 +2285,7 @@
     function renderRecentList() {
       const list = document.getElementById('recent-list');
       const dates = Object.keys(DATA.entries).sort().reverse().slice(0, 5);
-      if (dates.length === 0) { list.innerHTML = `<div class="empty-state"><div class="display">Nothing logged yet</div>Tap the + button or bulk import your past history.</div>`; return; }
+      if (dates.length === 0) { list.innerHTML = `<div class="empty-state"><div class="display">Nothing logged yet</div>Tap the + button or import your past history.</div>`; return; }
       list.innerHTML = dates.map(ds => {
         const e = DATA.entries[ds]; const d = parseDate(ds); const tags = [];
         if (e.flow && e.flow !== 'none') tags.push(`<span class="tag">${e.flow}</span>`);
@@ -2335,7 +2344,7 @@
     function renderHistory() {
       const starts = getPeriodStartDates().slice().reverse();
       const container = document.getElementById('history-list');
-      if (starts.length === 0) { container.innerHTML = `<div class="empty-state"><div class="display">No cycles yet</div>Bulk import your history, or log periods one by one.</div>`; return; }
+      if (starts.length === 0) { container.innerHTML = `<div class="empty-state"><div class="display">No cycles yet</div>Import your history, or log periods one by one.</div>`; return; }
       const allStarts = getPeriodStartDates();
       container.innerHTML = starts.map(ds => {
         const idx = allStarts.indexOf(ds); const d = parseDate(ds);
@@ -2573,15 +2582,37 @@
     }
 
     function openImportModal() {
-      document.getElementById('import-error').textContent = '';
-      document.getElementById('import-paste').value = '';
+      const pastePanel = document.getElementById('import-paste-panel');
+      const pasteInput = document.getElementById('import-paste');
+      const err = document.getElementById('import-error');
+
+      if (pastePanel) pastePanel.style.display = 'none';
+      if (pasteInput) pasteInput.value = '';
+      if (err) err.textContent = '';
+
       document.getElementById('import-overlay').classList.add('open');
     }
-    function closeImportModal() { document.getElementById('import-overlay').classList.remove('open'); }
-    function focusImportPaste() {
-      document.getElementById('import-paste').focus();
-      document.getElementById('import-paste').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    function closeImportModal() {
+      document.getElementById('import-overlay').classList.remove('open');
     }
+
+    function showImportPaste() {
+      const panel = document.getElementById('import-paste-panel');
+      const input = document.getElementById('import-paste');
+      const err = document.getElementById('import-error');
+
+      if (panel) panel.style.display = 'block';
+      if (err) err.textContent = '';
+
+      requestAnimationFrame(() => {
+        if (input) {
+          input.focus();
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }
+
     function chooseImportFile(kind) {
       const input = document.getElementById('import-file');
       input.dataset.kind = kind;
@@ -2687,9 +2718,67 @@
 
     async function importPastedData() {
       const err = document.getElementById('import-error');
+      const raw = document.getElementById('import-paste').value.trim();
       err.textContent = '';
-      try { await importTextBackup(document.getElementById('import-paste').value); }
-      catch (e) { console.error(e); err.textContent = e.message || 'Could not import that data.'; }
+
+      if (!raw) {
+        err.textContent = 'Paste your saved data first.';
+        return;
+      }
+
+      try {
+        // First try the normal Red Flag CSV backup format.
+        try {
+          await importTextBackup(raw);
+          return;
+        } catch (_) {
+          // If it is not a CSV backup, also accept a simple
+          // one-entry-per-line format.
+        }
+
+        const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+        const batch = db.batch();
+        let count = 0;
+        const failed = [];
+
+        lines.forEach(line => {
+          const parts = line.split(',').map(part => part.trim());
+          const date = flexParseDate(parts[0]);
+
+          if (!date) {
+            failed.push(line);
+            return;
+          }
+
+          const lengthValue = parts[1] ? parseInt(parts[1], 10) : 1;
+          const length = Number.isFinite(lengthValue) ? Math.max(1, lengthValue) : 1;
+
+          for (let i = 0; i < length; i++) {
+            const ds = fmt(addDays(date, i));
+            batch.set(
+              entriesCol().doc(ds),
+              Object.assign({}, DATA.entries[ds] || {}, { flow: 'medium' })
+            );
+            count++;
+          }
+        });
+
+        if (failed.length) {
+          err.textContent =
+            `Couldn't read ${failed.length} line(s): ${failed.slice(0, 2).join(' | ')}${failed.length > 2 ? '…' : ''}`;
+        }
+
+        if (!count) {
+          throw new Error('No valid cycle data was found. Check the format and try again.');
+        }
+
+        await batch.commit();
+        closeImportModal();
+        showToast(`Imported ${lines.length - failed.length} cycle(s)`);
+      } catch (e) {
+        console.error(e);
+        err.textContent = e.message || 'Could not import that data.';
+      }
     }
 
     async function importPdfBackup(file) {
@@ -2744,41 +2833,6 @@
         await writeSettings();
         showToast('All data erased');
       }
-    }
-
-    /* ============================================================
-       BULK IMPORT
-       ============================================================ */
-    function openBulkImport() { document.getElementById('bulk-error').textContent = ''; document.getElementById('bulk-input').value = ''; document.getElementById('bulk-overlay').classList.add('open'); }
-    function closeBulkImport() { document.getElementById('bulk-overlay').classList.remove('open'); }
-
-    async function processBulkImport() {
-      const raw = document.getElementById('bulk-input').value;
-      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
-      const errEl = document.getElementById('bulk-error');
-      if (lines.length === 0) { errEl.textContent = 'Paste at least one line first.'; return; }
-
-      const batch = db.batch();
-      let count = 0, failed = [];
-      lines.forEach(line => {
-        const parts = line.split(',').map(p => p.trim());
-        const d = flexParseDate(parts[0]);
-        if (!d) { failed.push(line); return; }
-        const length = parts[1] ? parseInt(parts[1]) : 1;
-        for (let i = 0; i < Math.max(1, length); i++) {
-          const dayDate = addDays(d, i);
-          const ds = fmt(dayDate);
-          batch.set(entriesCol().doc(ds), Object.assign({}, DATA.entries[ds] || {}, { flow: 'medium' }));
-          count++;
-        }
-      });
-
-      if (failed.length) { errEl.textContent = `Couldn't parse ${failed.length} line(s): ${failed.slice(0, 3).join(' | ')}${failed.length > 3 ? '…' : ''}`; }
-      if (count === 0) return;
-
-      await batch.commit();
-      closeBulkImport();
-      showToast(`Imported ${lines.length - failed.length} cycle(s)`);
     }
 
     /* ============================================================
