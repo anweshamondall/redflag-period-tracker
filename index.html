@@ -20,6 +20,9 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+  <!-- Lightweight client-side PDF export/import. No server upload required. -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 
   <style>
     /* ============================================================
@@ -953,6 +956,63 @@
     .signout-link:hover { color: var(--wine); }
 
     /* ============================================================
+       DATA BACKUP / IMPORT
+       ============================================================ */
+    .backup-actions {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .backup-action {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+      text-align: left;
+      min-height: 74px;
+    }
+    .backup-action strong { font-size: 13px; }
+    .backup-action span { font-size: 11px; color: var(--ink-soft); font-weight: 500; }
+    .import-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .import-choice {
+      border: 1.5px solid var(--line);
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 14px;
+      text-align: left;
+      cursor: pointer;
+      color: var(--ink);
+      font-family: inherit;
+      transition: transform .12s ease, border-color .15s ease, background .15s ease;
+    }
+    .import-choice:hover { border-color: var(--wine); background: var(--surface-2); }
+    .import-choice:active { transform: translateY(2px); }
+    .import-choice strong { display: block; font-size: 13px; margin-bottom: 4px; }
+    .import-choice span { display: block; font-size: 11px; color: var(--ink-soft); line-height: 1.35; }
+    .import-paste-wrap { margin-top: 4px; }
+    .import-paste-wrap textarea { margin-bottom: 8px; }
+    .format-note {
+      background: var(--surface-2);
+      border-radius: 14px;
+      padding: 11px 13px;
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--ink-soft);
+      margin-bottom: 14px;
+    }
+    .format-note strong { color: var(--ink); }
+    @media (max-width: 620px) {
+      .backup-actions { grid-template-columns: 1fr; }
+      .backup-action { min-height: 62px; }
+      .import-choice-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ============================================================
        TOAST
        ============================================================ */
     .toast {
@@ -1380,15 +1440,25 @@
             <h2>Your data</h2>
             <div class="stamp-badge">cloud<br>synced</div>
           </div>
-          <div class="card-sub">Stored securely in your Red Flag cloud account — synced automatically to any device you log into.</div>
-          <div class="btn-row">
-            <button class="btn btn-ghost" onclick="exportData()">Export backup (.json)</button>
-            <button class="btn btn-ghost" onclick="document.getElementById('import-file').click()">Import
-              backup</button>
-            <input type="file" id="import-file" accept="application/json" onchange="importData(event)"
-              style="display:none;">
+          <div class="card-sub">Stored securely in your Red Flag cloud account — synced automatically to any device
+            you log into.</div>
+          <div class="backup-actions">
+            <button class="btn btn-ghost backup-action" onclick="exportJSON()">
+              <strong>Export JSON</strong><span>Full restore-ready backup</span>
+            </button>
+            <button class="btn btn-ghost backup-action" onclick="exportCSV()">
+              <strong>Export CSV</strong><span>Easy to read or open in Sheets</span>
+            </button>
+            <button class="btn btn-ghost backup-action" onclick="exportPDF()">
+              <strong>Export PDF</strong><span>Readable copy of your data</span>
+            </button>
+          </div>
+          <div class="btn-row" style="margin-top:10px;">
+            <button class="btn btn-primary" onclick="openImportModal()">Import data</button>
             <button class="btn btn-danger" onclick="clearAllData()">Erase all data</button>
           </div>
+          <input type="file" id="import-file" accept=".json,.csv,.pdf,application/json,text/csv,application/pdf" onchange="importData(event)"
+            style="display:none;">
         </div>
         <!-- Account section — sign out lives here, not in the top bar -->
         <div class="card">
@@ -1472,6 +1542,44 @@
 ..."></textarea>
       <div class="auth-error" id="bulk-error"></div>
       <div class="btn-row"><button class="btn btn-primary btn-block" onclick="processBulkImport()">Import all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA IMPORT MODAL -->
+  <div class="overlay" id="import-overlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Import your data</h2><button class="modal-close" onclick="closeImportModal()">✕</button>
+      </div>
+      <div class="card-sub" style="margin-bottom:14px;">Bring your Red Flag backup to this account without having to rebuild your history manually.</div>
+
+      <div class="import-choice-grid">
+        <button class="import-choice" onclick="chooseImportFile('json')">
+          <strong>Upload JSON</strong><span>Best option for a complete Red Flag restore.</span>
+        </button>
+        <button class="import-choice" onclick="chooseImportFile('csv')">
+          <strong>Upload CSV</strong><span>Great if your backup is in Sheets or Excel.</span>
+        </button>
+        <button class="import-choice" onclick="chooseImportFile('pdf')">
+          <strong>Upload PDF</strong><span>Works with PDFs exported by Red Flag.</span>
+        </button>
+        <button class="import-choice" onclick="focusImportPaste()">
+          <strong>Paste data</strong><span>Paste a JSON/CSV backup directly — no file needed.</span>
+        </button>
+      </div>
+
+      <div class="format-note">
+        <strong>Tip:</strong> JSON keeps everything exactly. CSV is best for editing. PDF is mainly for viewing/sharing and can only be imported when it was exported by Red Flag.
+      </div>
+
+      <div class="import-paste-wrap">
+        <label for="import-paste">Or paste your backup here</label>
+        <textarea class="mono-input" id="import-paste" placeholder='Paste Red Flag JSON or CSV here...'></textarea>
+        <div class="auth-error" id="import-error"></div>
+        <div class="btn-row">
+          <button class="btn btn-primary btn-block" onclick="importPastedData()">Import pasted data</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2215,31 +2323,293 @@
       showToast('Settings saved');
     }
 
-    function exportData() {
-      const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json' });
+    /* ============================================================
+       DATA BACKUP / IMPORT
+       ============================================================ */
+    function downloadBlob(blob, filename) {
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `redflag-backup-${fmt(today())}.json`; a.click();
-      URL.revokeObjectURL(url);
-      showToast('Backup downloaded');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     }
-    async function importData(evt) {
-      const file = evt.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        try {
-          const parsed = JSON.parse(e.target.result);
-          if (parsed.entries && parsed.settings) {
-            const batch = db.batch();
-            Object.entries(parsed.entries).forEach(([ds, entry]) => { batch.set(entriesCol().doc(ds), entry); });
-            await batch.commit();
-            DATA.settings = Object.assign(DATA.settings, parsed.settings);
-            await writeSettings();
-            showToast('Backup imported');
-          } else { showToast("That file doesn't look right"); }
-        } catch (err) { showToast('Could not read that file'); }
+
+    function getBackupFilename(ext) {
+      return `redflag-backup-${fmt(today())}.${ext}`;
+    }
+
+    function exportJSON() {
+      const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json;charset=utf-8' });
+      downloadBlob(blob, getBackupFilename('json'));
+      showToast('JSON backup downloaded');
+    }
+
+    function csvEscape(value) {
+      if (value === null || value === undefined) return '';
+      if (Array.isArray(value) || (typeof value === 'object' && value !== null)) value = JSON.stringify(value);
+      value = String(value);
+      return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+    }
+
+    function getCSVRows() {
+      const fields = new Set();
+      Object.values(DATA.entries || {}).forEach(entry => Object.keys(entry || {}).forEach(k => fields.add(k)));
+      const columns = ['date', ...Array.from(fields).sort()];
+      const rows = [
+        '# Red Flag Backup CSV v1',
+        `# cycleLength=${DATA.settings.cycleLength || 28}`,
+        `# lutealLength=${DATA.settings.lutealLength || 14}`,
+        `# periodLength=${DATA.settings.periodLength || 5}`,
+        `# notifyDaysBefore=${DATA.settings.notifyDaysBefore ?? 2}`,
+        `# notifyOvulation=${DATA.settings.notifyOvulation ? 'true' : 'false'}`,
+        columns.map(csvEscape).join(',')
+      ];
+      Object.keys(DATA.entries || {}).sort().forEach(ds => {
+        const entry = DATA.entries[ds] || {};
+        rows.push(columns.map(col => col === 'date' ? csvEscape(ds) : csvEscape(entry[col])).join(','));
+      });
+      return rows.join('\n');
+    }
+
+    function exportCSV() {
+      const blob = new Blob([getCSVRows()], { type: 'text/csv;charset=utf-8' });
+      downloadBlob(blob, getBackupFilename('csv'));
+      showToast('CSV backup downloaded');
+    }
+
+    function exportPDF() {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast('PDF export is temporarily unavailable');
+        return;
+      }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const margin = 42;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      let y = 54;
+
+      const addText = (text, size = 10, bold = false) => {
+        doc.setFont('helvetica', bold ? 'bold' : 'normal');
+        doc.setFontSize(size);
+        const lines = doc.splitTextToSize(String(text), pageWidth - margin * 2);
+        lines.forEach(line => {
+          if (y > pageHeight - 54) { doc.addPage(); y = 54; }
+          doc.text(line, margin, y);
+          y += size + 5;
+        });
       };
-      reader.readAsText(file);
-      evt.target.value = '';
+
+      addText('Red Flag — Data Backup', 20, true);
+      addText(`Exported ${niceDate(today())}`, 9);
+      y += 8;
+      addText('Settings', 13, true);
+      addText(`Cycle length: ${DATA.settings.cycleLength} days`);
+      addText(`Luteal length: ${DATA.settings.lutealLength} days`);
+      addText(`Typical period length: ${DATA.settings.periodLength} days`);
+      addText(`Period reminder: ${DATA.settings.notifyDaysBefore} days before`);
+      addText(`Ovulation notification: ${DATA.settings.notifyOvulation ? 'On' : 'Off'}`);
+      y += 8;
+      addText('Cycle entries', 13, true);
+
+      const dates = Object.keys(DATA.entries || {}).sort();
+      if (!dates.length) addText('No cycle entries saved.');
+      dates.forEach(ds => {
+        const e = DATA.entries[ds] || {};
+        const symptoms = Array.isArray(e.symptoms) ? e.symptoms.join(', ') : (e.symptoms || '');
+        const parts = [
+          ds,
+          e.flow ? `Flow: ${e.flow}` : '',
+          e.mood ? `Mood: ${e.mood}` : '',
+          symptoms ? `Symptoms: ${symptoms}` : '',
+          e.notes ? `Notes: ${e.notes}` : ''
+        ].filter(Boolean);
+        addText(parts.join(' • '), 9);
+      });
+
+      // Machine-readable marker: only PDFs generated by Red Flag are importable.
+      // It is intentionally small so it does not clutter the visible backup.
+      const machineData = btoa(unescape(encodeURIComponent(JSON.stringify(DATA))));
+      if (y > pageHeight - 100) { doc.addPage(); y = 54; }
+      doc.setFontSize(1);
+      doc.setTextColor(255, 255, 255);
+      // Keep the marker machine-readable while keeping it visually invisible.
+      doc.text(`REDFLAG_BACKUP_V1:${machineData}`, margin, pageHeight - 12);
+      doc.setTextColor(0, 0, 0);
+
+      doc.save(getBackupFilename('pdf'));
+      showToast('PDF backup downloaded');
+    }
+
+    function openImportModal() {
+      document.getElementById('import-error').textContent = '';
+      document.getElementById('import-paste').value = '';
+      document.getElementById('import-overlay').classList.add('open');
+    }
+    function closeImportModal() { document.getElementById('import-overlay').classList.remove('open'); }
+    function focusImportPaste() {
+      document.getElementById('import-paste').focus();
+      document.getElementById('import-paste').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function chooseImportFile(kind) {
+      const input = document.getElementById('import-file');
+      input.dataset.kind = kind;
+      input.value = '';
+      input.click();
+    }
+
+    async function commitImportedEntries(entries) {
+      const items = Object.entries(entries || {}).filter(([ds]) => /^\d{4}-\d{2}-\d{2}$/.test(ds));
+      if (!items.length) throw new Error('No valid cycle entries found.');
+      for (let i = 0; i < items.length; i += 450) {
+        const batch = db.batch();
+        items.slice(i, i + 450).forEach(([ds, entry]) => batch.set(entriesCol().doc(ds), entry));
+        await batch.commit();
+      }
+    }
+
+    function normalizeImportedValue(value) {
+      if (value === '') return '';
+      const trimmed = String(value).trim();
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+        try { return JSON.parse(trimmed); } catch (_) {}
+      }
+      return value;
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], cell = '', quoted = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (quoted) {
+          if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+          else if (ch === '"') quoted = false;
+          else cell += ch;
+        } else if (ch === '"') quoted = true;
+        else if (ch === ',') { row.push(cell); cell = ''; }
+        else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+        else if (ch !== '\r') cell += ch;
+      }
+      row.push(cell);
+      if (row.some(Boolean)) rows.push(row);
+      return rows;
+    }
+
+    function parseRedFlagCSV(text) {
+      const rows = parseCSV(text);
+      const settings = {};
+      const dataRows = [];
+      rows.forEach(row => {
+        const first = (row[0] || '').trim();
+        if (first.startsWith('#')) {
+          const m = first.match(/^#\s*([^=]+)=(.*)$/);
+          if (m) settings[m[1].trim()] = m[2].trim();
+          return;
+        }
+        dataRows.push(row);
+      });
+      if (!dataRows.length) throw new Error('That CSV is empty.');
+      const headers = dataRows.shift().map(h => h.trim());
+      const dateIndex = headers.indexOf('date');
+      if (dateIndex === -1) throw new Error('This CSV needs a date column.');
+      const entries = {};
+      dataRows.forEach(row => {
+        const ds = String(row[dateIndex] || '').trim();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(ds)) return;
+        const entry = {};
+        headers.forEach((h, i) => { if (h && h !== 'date' && row[i] !== undefined && row[i] !== '') entry[h] = normalizeImportedValue(row[i]); });
+        entries[ds] = entry;
+      });
+      return { settings, entries };
+    }
+
+    function settingsFromImported(raw) {
+      const defaults = { cycleLength: 28, lutealLength: 14, periodLength: 5, notifyDaysBefore: 2, notifyOvulation: false };
+      const out = {};
+      Object.keys(defaults).forEach(k => {
+        if (raw[k] !== undefined && raw[k] !== '') {
+          out[k] = k === 'notifyOvulation' ? String(raw[k]).toLowerCase() === 'true' : Number(raw[k]);
+        }
+      });
+      return out;
+    }
+
+    async function importParsedBackup(parsed) {
+      if (!parsed || !parsed.entries) throw new Error('No Red Flag cycle data was found.');
+      await commitImportedEntries(parsed.entries);
+      const importedSettings = settingsFromImported(parsed.settings || {});
+      if (Object.keys(importedSettings).length) {
+        DATA.settings = Object.assign(DATA.settings, importedSettings);
+        await writeSettings();
+      }
+      closeImportModal();
+      showToast(`Imported ${Object.keys(parsed.entries).length} cycle entr${Object.keys(parsed.entries).length === 1 ? 'y' : 'ies'}`);
+    }
+
+    async function importTextBackup(text) {
+      const trimmed = text.trim();
+      if (!trimmed) throw new Error('Paste some JSON or CSV data first.');
+      if (trimmed.startsWith('{')) {
+        return importParsedBackup(JSON.parse(trimmed));
+      }
+      const parsedCSV = parseRedFlagCSV(trimmed);
+      return importParsedBackup({ settings: parsedCSV.settings, entries: parsedCSV.entries });
+    }
+
+    async function importPastedData() {
+      const err = document.getElementById('import-error');
+      err.textContent = '';
+      try { await importTextBackup(document.getElementById('import-paste').value); }
+      catch (e) { console.error(e); err.textContent = e.message || 'Could not import that data.'; }
+    }
+
+    async function importPdfBackup(file) {
+      if (!window.pdfjsLib) throw new Error('PDF import is temporarily unavailable.');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const buffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buffer }).promise;
+      let text = '';
+      for (let pageNo = 1; pageNo <= pdf.numPages; pageNo++) {
+        const page = await pdf.getPage(pageNo);
+        const content = await page.getTextContent();
+        text += content.items.map(item => item.str).join(' ') + '\n';
+      }
+      const marker = text.match(/REDFLAG_BACKUP_V1:\s*([A-Za-z0-9+/=\s]+)/);
+      if (!marker) throw new Error('This PDF was not exported by Red Flag, so it cannot be restored safely.');
+      const encoded = marker[1].replace(/\s+/g, '');
+      const json = decodeURIComponent(escape(atob(encoded)));
+      await importParsedBackup(JSON.parse(json));
+    }
+
+    async function importData(evt) {
+      const file = evt.target.files[0];
+      if (!file) return;
+      const err = document.getElementById('import-error');
+      if (err) err.textContent = '';
+      try {
+        const name = file.name.toLowerCase();
+        if (name.endsWith('.pdf') || file.type === 'application/pdf') {
+          await importPdfBackup(file);
+        } else {
+          const text = await file.text();
+          if (name.endsWith('.csv') || file.type === 'text/csv') {
+            const parsed = parseRedFlagCSV(text);
+            await importParsedBackup(parsed);
+          } else {
+            await importParsedBackup(JSON.parse(text));
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        if (!document.getElementById('import-overlay').classList.contains('open')) openImportModal();
+        document.getElementById('import-error').textContent = e.message || 'Could not import that file.';
+      } finally {
+        evt.target.value = '';
+      }
     }
     async function clearAllData() {
       if (confirm('This erases every entry and setting, permanently. Are you sure?')) {
