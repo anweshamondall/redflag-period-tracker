@@ -1079,6 +1079,7 @@
       transition: transform .12s ease, border-color .15s ease, background .15s ease;
     }
     .import-choice:hover { border-color: var(--wine); background: var(--surface-2); }
+    .import-choice-wide { grid-column: 1 / -1; }
     .import-choice:active { transform: translateY(2px); }
     .import-choice strong { display: block; font-size: 13px; margin-bottom: 4px; }
     .import-choice span { display: block; font-size: 11px; color: var(--ink-soft); line-height: 1.35; }
@@ -1428,9 +1429,20 @@
         <div class="card">
           <div class="card-head">
             <h2>Cycle history</h2>
-            <button class="btn btn-ghost btn-sm" onclick="openBulkImport()">Bulk import past data</button>
           </div>
           <div id="history-list"></div>
+        </div>
+
+        <div class="card history-data-card">
+          <div class="card-head">
+            <h2>Bring in past data</h2>
+          </div>
+          <div class="card-sub">Add cycle history you already have, so it can live alongside the rest of your Red Flag records.</div>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="openImportModal()">Import data</button>
+            <button class="btn btn-ghost" onclick="openBulkImport()">Bulk import past data</button>
+          </div>
+          <input type="file" id="import-file" accept=".csv,.pdf,text/csv,application/pdf" onchange="importData(event)" style="display:none;">
         </div>
       </div>
 
@@ -1549,22 +1561,12 @@
                     <small>Easy to open and work with</small>
                   </span>
                 </button>
-                <button type="button" class="export-menu-item" onclick="handleExportChoice('json')">
-                  <span class="export-menu-icon">{ }</span>
-                  <span class="export-menu-text">
-                    <strong>JSON</strong>
-                    <small>Full backup for restoring your data</small>
-                  </span>
-                </button>
               </div>
             </div>
           </div>
           <div class="btn-row" style="margin-top:10px;">
-            <button class="btn btn-primary" onclick="openImportModal()">Import data</button>
             <button class="btn btn-danger" onclick="clearAllData()">Erase all data</button>
           </div>
-          <input type="file" id="import-file" accept=".json,.csv,.pdf,application/json,text/csv,application/pdf" onchange="importData(event)"
-            style="display:none;">
         </div>
         <!-- Account section — sign out lives here, not in the top bar -->
         <div class="card">
@@ -1658,30 +1660,27 @@
       <div class="modal-head">
         <h2>Import your data</h2><button class="modal-close" onclick="closeImportModal()">✕</button>
       </div>
-      <div class="card-sub" style="margin-bottom:14px;">Bring your cycle history with you. Upload a Red Flag backup, import a CSV, or paste your data directly.</div>
+      <div class="card-sub" style="margin-bottom:14px;">Bring your cycle history with you. Upload a CSV or a Red Flag PDF, or paste your CSV directly.</div>
 
       <div class="import-choice-grid">
-        <button class="import-choice" onclick="chooseImportFile('json')">
-          <strong>Upload JSON</strong><span>Best option for a complete Red Flag restore.</span>
-        </button>
         <button class="import-choice" onclick="chooseImportFile('csv')">
-          <strong>Upload CSV</strong><span>Great if your backup is in Sheets or Excel.</span>
+          <strong>Upload CSV</strong><span>Useful for structured records and spreadsheet data.</span>
         </button>
         <button class="import-choice" onclick="chooseImportFile('pdf')">
           <strong>Upload PDF</strong><span>Works with PDFs exported by Red Flag.</span>
         </button>
-        <button class="import-choice" onclick="focusImportPaste()">
-          <strong>Paste data</strong><span>Paste a JSON/CSV backup directly — no file needed.</span>
+        <button class="import-choice import-choice-wide" onclick="focusImportPaste()">
+          <strong>Paste CSV</strong><span>Paste your cycle history directly — no file needed.</span>
         </button>
       </div>
 
       <div class="format-note">
-        <strong>Tip:</strong> JSON is best for a complete backup. CSV is useful for structured records, while PDF is best for keeping a readable copy.
+        <strong>Tip:</strong> CSV works well for structured records. PDF is useful when you have a Red Flag report you want to bring back into the app.
       </div>
 
       <div class="import-paste-wrap">
-        <label for="import-paste">Or paste your backup here</label>
-        <textarea class="mono-input" id="import-paste" placeholder='Paste Red Flag JSON or CSV here...'></textarea>
+        <label for="import-paste">Or paste your CSV here</label>
+        <textarea class="mono-input" id="import-paste" placeholder='Paste Red Flag CSV here...'></textarea>
         <div class="auth-error" id="import-error"></div>
         <div class="btn-row">
           <button class="btn btn-primary btn-block" onclick="importPastedData()">Import pasted data</button>
@@ -2466,7 +2465,6 @@
       closeExportMenu();
       if (format === 'pdf') exportPDF();
       else if (format === 'csv') exportCSV();
-      else if (format === 'json') exportJSON();
     }
 
     document.addEventListener('click', function(event) {
@@ -2477,12 +2475,6 @@
     document.addEventListener('keydown', function(event) {
       if (event.key === 'Escape') closeExportMenu();
     });
-
-    function exportJSON() {
-      const blob = new Blob([JSON.stringify(DATA, null, 2)], { type: 'application/json;charset=utf-8' });
-      downloadBlob(blob, getBackupFilename('json'));
-      showToast('JSON backup downloaded');
-    }
 
     function csvEscape(value) {
       if (value === null || value === undefined) return '';
@@ -2689,10 +2681,7 @@
 
     async function importTextBackup(text) {
       const trimmed = text.trim();
-      if (!trimmed) throw new Error('Paste some JSON or CSV data first.');
-      if (trimmed.startsWith('{')) {
-        return importParsedBackup(JSON.parse(trimmed));
-      }
+      if (!trimmed) throw new Error('Paste some CSV data first.');
       const parsedCSV = parseRedFlagCSV(trimmed);
       return importParsedBackup({ settings: parsedCSV.settings, entries: parsedCSV.entries });
     }
@@ -2731,14 +2720,12 @@
         const name = file.name.toLowerCase();
         if (name.endsWith('.pdf') || file.type === 'application/pdf') {
           await importPdfBackup(file);
-        } else {
+        } else if (name.endsWith('.csv') || file.type === 'text/csv') {
           const text = await file.text();
-          if (name.endsWith('.csv') || file.type === 'text/csv') {
-            const parsed = parseRedFlagCSV(text);
-            await importParsedBackup(parsed);
-          } else {
-            await importParsedBackup(JSON.parse(text));
-          }
+          const parsed = parseRedFlagCSV(text);
+          await importParsedBackup(parsed);
+        } else {
+          throw new Error('Please choose a CSV or a Red Flag PDF.');
         }
       } catch (e) {
         console.error(e);
